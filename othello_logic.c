@@ -1267,475 +1267,7 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
 }
 
 
-
-float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass){
-    int stable_point = 100;
-    uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
-    int turn = 64 - bit_count(empty);
-    float alpha = nmin(nmax(0,(turn -35) / 20),1);
-
-    uint64_t neighbor_mask_w =
-    (board_w << 1 & RIGHT_MASK) |  // 左
-    (board_w >> 1 & LEFT_MASK) |  // 右
-    (board_w << 8) |                          // 上
-    (board_w >> 8) |                         // 下
-    (board_w << 7 & RIGHT_MASK) |  // 左上
-    (board_w << 9 & LEFT_MASK) |  // 右上
-    (board_w >> 7 & LEFT_MASK) |  // 右下
-    (board_w >> 9 & RIGHT_MASK);   // 左下
-
-    uint64_t neighbor_mask_b =
-    (board_b << 1 & RIGHT_MASK) |  // 左
-    (board_b >> 1 & LEFT_MASK) |  // 右
-    (board_b << 8) |                          // 上
-    (board_b >> 8) |                          // 下
-    (board_b << 7 & RIGHT_MASK) |  // 左上
-    (board_b << 9 & LEFT_MASK) |  // 右上
-    (board_b >> 7 & LEFT_MASK) |  // 右下
-    (board_b >> 9 & RIGHT_MASK);   // 左下
-
-    uint64_t connected_pairs_w = neighbor_mask_w & board_w;
-    uint64_t connected_pairs_b = neighbor_mask_b & board_b;
-
-    //printf("\nconnect_w:%llu",connected_pairs_w);
-    //printf("\nconnect_b:%llu",connected_pairs_b);
-    
-    uint64_t open_stones_w = neighbor_mask_w & empty;
-    uint64_t open_stones_b = neighbor_mask_b & empty;
-
-    //printf("\nopen_w:%llu",open_stones_w);
-    //printf("\nopen_b:%llu",open_stones_b);
-
-    float spread_w = calc_spread_penalty(board_w);
-    float spread_b = calc_spread_penalty(board_b);
-
-    float b_snum = bit_count(board_b);
-    float w_snum = bit_count(board_w);
-
-    float connected_pairs_w_num = bit_count(connected_pairs_w)/(w_snum+1);
-    float connected_pairs_b_num = bit_count(connected_pairs_b)/(b_snum+1);
-
-    float open_stones_w_num = bit_count(open_stones_w)/(w_snum+1);
-    float open_stones_b_num = bit_count(open_stones_b)/(b_snum+1);
-
-    float connected_pairs_score = connected_pairs_w_num - connected_pairs_b_num;
-    float open_stones_score = -open_stones_w_num + open_stones_b_num;
-    float spread_score = -spread_w + spread_b;
-
-
-    RowCol legal_list_w[64];
-    //RowCol *legal_list_w = malloc(sizeof(RowCol) * 64);
-    //RowCol *legal_list_b = malloc(sizeof(RowCol) * 64);
-    int legal_list_size_w=0;
-    get_legal_square("white",board_w,board_b,legal_list_w,&legal_list_size_w);
-    //printf("\nwhite_legal_finish");
-    RowCol legal_list_b[64];
-    int legal_list_size_b=0;
-    //printf("\nblack_legal_start");
-    get_legal_square("black",board_w,board_b,legal_list_b,&legal_list_size_b);
-    //printf("\nlegal_list_size_b: %d\n", legal_list_size_b);
-    //printf("\nblack_finish");
-    //fflush(stdout);
-    //printf("\ndef_cx");
-    //fflush(stdout);
-    int w_cx = 0,b_cx = 0,index=0;
-    uint64_t w_legal=0,b_legal=0,legal_bit;
-    //printf("\ndef_cx2");
-    //fflush(stdout);
-    for(int idx=0;idx<legal_list_size_w;idx++){
-        RowCol legal = legal_list_w[idx];
-        int row=legal.row,col=legal.col; 
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        w_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                w_cx++;
-            }
-        }
-    }
-    //fflush(stdout);
-    for(int idx=0;idx<legal_list_size_b;idx++){
-        RowCol legal = legal_list_b[idx];
-        int row=legal.row,col=legal.col;
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        b_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                b_cx++;
-            }
-        }
-    }
-    //fflush(stdout);
-    float zennmetu_keikoku = 0;
-    if(bit_count(board_w) <= 2&&turn>=10){
-        zennmetu_keikoku = -45;
-    }
-    //fflush(stdout);
-    float edge_point_w = 0;
-    float edge_point_b = 0;
-    float edge_point,dis_num;
-    uint64_t m_e_list[4] = {m1_e,m2_e,m3_e,m4_e};
-    uint64_t m_c_list[4] = {m1_c,m2_c,m3_c,m4_c};
-    uint64_t c_w=0,c_b=0;
-    get_confirmed_stones(board_w,board_b,&c_w,&c_b);
-
-    int c_w_num=bit_count(c_w);
-    int c_b_num=bit_count(c_b);
-    float con_score = (c_w_num - c_b_num);
-    //fflush(stdout);
-    for(int i=0;i<4;i++){
-        int dec_point=0,add_point=0;
-
-        int w_num=0,b_num=0;
-
-        w_num = bit_count(board_w&m_e_list[i]);
-        b_num = bit_count(board_b&m_e_list[i]);
-        uint64_t w_corner = board_w&m_c_list[i];
-        uint64_t b_corner = board_b&m_c_list[i];
-        uint64_t w_corner_legal = w_legal&m_c_list[i];
-        uint64_t b_corner_legal = b_legal&m_c_list[i];
-        //printf("\nw:%d\nb:%d",w_num,b_num);
-        if(w_num==6){
-            int dec = 0;
-            if(bit_count(b_corner)==1&&bit_count(w_corner)==0){
-                dec_point += 10*6*stable_point* 4/5/10;
-                dec = 1;
-            }
-            if(bit_count(b_corner_legal)>0){
-                dec_point += 10*6*stable_point* 3/5/10;
-                dec = 1;
-            }
-            if(dec==0){
-                add_point += 10*6*stable_point* 4/5/10;
-            }
-        }
-        //printf("\nadd:%d\ndec:%d",add_point,dec_point);
-        edge_point_w += add_point;
-        edge_point_w -= dec_point;
-        dec_point = 0;
-        add_point = 0;
-        if(b_num == 0){
-            edge_point_w += w_num*stable_point*1/20;
-        }
-        if(b_num==6){
-            int dec = 0;
-            if(bit_count(w_corner)==1&&bit_count(b_corner)==0){
-                dec_point += 10*6*stable_point* 4/5/10;
-                dec = 1;
-                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
-            }
-            if(bit_count(w_corner_legal)>0){
-                dec_point += 10*6*stable_point* 3/5/10;
-                dec = 1;
-                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
-            }
-            if(dec==0){
-                add_point += 10*6*stable_point* 4/5/10;
-                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
-            }
-        }
-        edge_point_b += add_point;
-        edge_point_b -= dec_point;
-        if (w_num==0){
-            edge_point_b += b_num*stable_point*1/20;
-            //printf("\nnum:%d",b_num*stable_point*1/20);
-        }
-    }
-    //fflush(stdout);
-    edge_point = edge_point_w - edge_point_b;
-    //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
-    dis_num = legal_list_size_w - legal_list_size_b -w_cx+b_cx;
-    //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
-    int white_score=0,black_score=0;
-    eval_bitboard_score(board_w,board_b,&white_score,&black_score);
-
-    float board_score = white_score - black_score*1.5;
-
-    /* int b_snum = bit_count(board_b);
-    int w_snum = bit_count(board_w); */
-    float lose_keikoku = 0;
-    //fflush(stdout);
-    if(legal_list_size_b==0&&legal_list_size_w==0&&b_snum > w_snum){
-        lose_keikoku = -1000;
-    }
-    float pass_bonus = false_pass-true_pass;
-
-    float score = (1-alpha) * (dis_num*300/100 +  board_score*200/100) + alpha * ((w_snum-b_snum)*5000/100+(legal_list_size_w-legal_list_size_b)*400/100);
-
-    //fflush(stdout);
-
-
-    //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
-    //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
-    //free(legal_list_w);
-    //free(legal_list_b);
-    //printf("\ndef_cx3");
-    return ((float)(score*10 + con_score*stable_point*10 + edge_point*10) / 10.0f) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90.0f*alpha);
-    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
-}
-
-float evaluate_board2(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
-    float stable_point,
-    float edge_point,
-    float num_legal,
-    float board_score,
-    float sum_point,
-    float num_legal2,
-    float connect_pairs_point,
-    float spread_point,
-    float open_stones_point,
-    float alpha_start,
-    float alpha_speed,
-    float beta_start,
-    float beta_speed,
-    float num_pass
-    ){
-    //int stable_point = 100;
-    uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
-    int turn = 64 - bit_count(empty);
-    float alpha = nmin(nmax(0,(turn -alpha_start) / alpha_speed),1);
-    float beta = nmin(nmax(0,(turn -beta_start) / beta_speed),1);
-
-
-    float spread_score = 0,open_stones_score = 0,connected_pairs_score = 0;
-    float b_snum = bit_count(board_b);
-    float w_snum = bit_count(board_w);
-    float connect_w_num,connect_b_num,open_w_num,open_b_num,touch_w2b,touch_b2w,touch_other;
-    find_connected_open_stone2(board_w,board_b,empty,&connect_w_num,&open_w_num,&touch_w2b);
-    find_connected_open_stone2(board_b,board_w,empty,&connect_b_num,&open_b_num,&touch_b2w);
-    if(beta!=1){
-        
-
-        
-        
-
-        float spread_w = calc_spread_penalty(board_w);
-        float spread_b = calc_spread_penalty(board_b);
-
-        
-
-        
-
-        float open_stones_w_num = open_w_num/(w_snum+0.1);
-        float open_stones_b_num = open_b_num/(b_snum+0.1);
-
-        
-        open_stones_score = -open_stones_w_num + open_stones_b_num;
-        spread_score = -spread_w + spread_b;
-    }
-    touch_other = touch_w2b/(w_snum+0.1) - touch_b2w/(b_snum+0.1);
-    float connected_pairs_w_num = connect_w_num/(w_snum+0.1);
-    float connected_pairs_b_num = connect_b_num/(b_snum+0.1);
-    connected_pairs_score = connected_pairs_w_num - connected_pairs_b_num;
-    
-    //printf("\nopen_w:%f",open_stones_w_num);
-    //printf("\nopen_b:%f",open_stones_b_num); 
-    //printf("\nconect_w:%f",connected_pairs_w_num);
-    //printf("\nconect_b:%f",connected_pairs_b_num);
-
-    RowCol legal_list_w[64];
-    //RowCol *legal_list_w = malloc(sizeof(RowCol) * 64);
-    //RowCol *legal_list_b = malloc(sizeof(RowCol) * 64);
-    int legal_list_size_w=0;
-    get_legal_square("white",board_w,board_b,legal_list_w,&legal_list_size_w);
-    //printf("\nwhite_legal_finish");
-    RowCol legal_list_b[64];
-    int legal_list_size_b=0;
-    //printf("\nblack_legal_start");
-    get_legal_square("black",board_w,board_b,legal_list_b,&legal_list_size_b);
-    //printf("\nlegal_list_size_b: %d\n", legal_list_size_b);
-    //printf("\nblack_finish");
-    //fflush(stdout);
-    //printf("\ndef_cx");
-    //fflush(stdout);
-    int w_cx = 0,b_cx = 0,index=0;
-    uint64_t w_legal=0,b_legal=0,legal_bit;
-    //printf("\ndef_cx2");
-    //fflush(stdout);
-    for(int idx=0;idx<legal_list_size_w;idx++){
-        RowCol legal = legal_list_w[idx];
-        int row=legal.row,col=legal.col; 
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        w_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                w_cx++;
-            }
-        }
-    }
-    //fflush(stdout);
-    for(int idx=0;idx<legal_list_size_b;idx++){
-        RowCol legal = legal_list_b[idx];
-        int row=legal.row,col=legal.col;
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        b_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                b_cx++;
-            }
-        }
-    }
-    //fflush(stdout);
-    float zennmetu_keikoku = 0;
-    if(bit_count(board_w) <= 2&&turn>=10){
-        zennmetu_keikoku = -6000;
-    }
-    //fflush(stdout);
-    float edge_point_w = 0;
-    float edge_point_b = 0;
-    float edge_point,dis_num;
-    uint64_t m_e_list[4] = {m1_e,m2_e,m3_e,m4_e};
-    uint64_t m_c_list[4] = {m1_c,m2_c,m3_c,m4_c};
-    uint64_t c_w=0,c_b=0;
-    get_confirmed_stones(board_w,board_b,&c_w,&c_b);
-
-    int c_w_num=bit_count(c_w);
-    int c_b_num=bit_count(c_b);
-    float con_score = (c_w_num - c_b_num);
-    //fflush(stdout);
-    for(int i=0;i<4;i++){
-        int dec_point=0,add_point=0;
-
-        int w_num=0,b_num=0;
-
-        w_num = bit_count(board_w&m_e_list[i]);
-        b_num = bit_count(board_b&m_e_list[i]);
-        uint64_t w_corner = board_w&m_c_list[i];
-        uint64_t b_corner = board_b&m_c_list[i];
-        uint64_t w_corner_legal = w_legal&m_c_list[i];
-        uint64_t b_corner_legal = b_legal&m_c_list[i];
-        int b_c_num = bit_count(b_corner);
-        int w_c_num = bit_count(w_corner);
-        int w_c_legal_num = bit_count(w_corner_legal);
-        int b_c_legal_num = bit_count(b_corner_legal);
-        int edge_con_num_w = bit_count(m_e_list[i]&c_w);
-        int edge_con_num_b = bit_count(m_e_list[i]&c_b);
-        //printf("\nw:%d\nb:%d",w_num,b_num);
-        if(w_num==6){
-            int dec = 0;
-            if(b_c_num==1&&w_c_num==0){
-                dec_point += 6*stable_point*0.9;
-                dec = 1;
-            }
-            if(b_c_legal_num>0){
-                dec_point += 6*stable_point* 0.8;
-                dec = 1;
-            }
-            if(b_c_num==0){
-                add_point += 6*stable_point* 0.3;
-            }
-        }
-        
-        if((w_num+b_num)==6&&b_num!=0){
-            if(w_c_num<=1){
-                dec_point += (6-edge_con_num_w)*stable_point*0.9;
-            }
-            if((edge_con_num_w+edge_con_num_b)<=5&&w_c_num==1&&w_c_legal_num==1){
-                dec_point += (b_num-edge_con_num_b)*stable_point*0.9;
-            }
-        }
-        //printf("\nadd:%d\ndec:%d",add_point,dec_point);
-        edge_point_w += add_point;// + w_c_legal_num*6*0.4;
-        edge_point_w -= dec_point;
-        dec_point = 0;
-        add_point = 0;
-        /* if(b_num<=3){
-            if(b_c_legal_num>=1&&(b_num+w_num)>=5){
-                edge_point_w -= w_num*stable_point/10;
-            }else{
-                if(b_num<=0){
-                    edge_point_w += w_num*stable_point/20;
-                }
-            }
-        } */
-        /* if(b_num<=0){
-            edge_point_w += w_num*stable_point/10;
-        }else{
-            edge_point_w -= w_num*stable_point/10;
-        } */
-        if(b_num==6){
-            int dec = 0;
-            if(w_c_num==1&&b_c_num==0){
-                dec_point += 6*stable_point*0.9;
-                dec = 1;
-                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
-            }
-            if(w_c_legal_num>0){
-                dec_point += 6*stable_point* 0.8;
-                dec = 1;
-                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
-            }
-            if(dec==0){
-                add_point += 6*stable_point* 0.3;
-                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
-            }
-        }
-        if((w_num+b_num)==6&&w_num!=0){
-            if(b_c_num<=1){
-                dec_point += (6-edge_con_num_b)*stable_point*0.9;
-            }
-            if((edge_con_num_b+edge_con_num_w)<=5&&b_c_num==1&&b_c_legal_num==1){
-                dec_point += (w_num-edge_con_num_w)*stable_point*0.9;
-            }
-        }
-        edge_point_b += add_point;
-        edge_point_b -= dec_point;
-        /* if (w_num==0){
-            edge_point_b += b_num*stable_point*1/20;
-            //printf("\nnum:%d",b_num*stable_point*1/20);
-        } */
-    }
-    //fflush(stdout);
-    edge_point = edge_point_w - edge_point_b;
-    edge_point *= edge_point;
-    //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
-    dis_num = legal_list_size_w - legal_list_size_b -w_cx+b_cx;
-    //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
-    int white_score=0,black_score=0;
-    eval_bitboard_score(board_w,board_b,&white_score,&black_score);
-
-    float board_score = white_score - black_score*1.5;
-
-    /* int b_snum = bit_count(board_b);
-    int w_snum = bit_count(board_w); */
-    float lose_keikoku = 0;
-    //fflush(stdout);
-    if(legal_list_size_b==0&&legal_list_size_w==0&&b_snum > w_snum){
-        lose_keikoku = -1000;
-    }
-    float pass_bonus = false_pass-true_pass;
-
-    float score = (1-alpha) * (dis_num*num_legal +  board_score*board_score + (connected_pairs_score*connect_pairs_point + open_stones_score*open_stones_point + spread_score*spread_point)*(1-beta)) + alpha * ((w_snum-b_snum)*sum_point+(legal_list_size_w-legal_list_size_b)*num_legal2);
-
-    //fflush(stdout);
-
-
-    //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
-    //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
-    //free(legal_list_w);
-    //free(legal_list_b);
-    //printf("\ndef_cx3");
-    if (turn >= 30) {
-        score += (pass_bonus) * num_pass;
-    }
-    return ((float)(score + con_score*stable_point + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku;
-    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
-}
-float evaluate_board3(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
+float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
     float stable_point,
     float edge_point,
     float num_legal,
@@ -2018,335 +1550,8 @@ int compare_move_order_asc(const void *a, const void *b) {
 }
 static int call_count = 0;
 
-void minimax(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta,int maximizing_player,int true_pass,int false_pass,RowCol *act,float *score){
-    /* call_count++;
-    printf("call #%d, depth=%d\n", call_count, depth);
-    printf("board_w: 0x%016llX\n", board_w);
-    printf("board_b: 0x%016llX\n", board_b); */
-    //fflush(stdout);
-    //printf("%d,%d\n",call_count,depth);
-    /* if (call_count > 600) {
-        
-        printf("Recursion limit exceeded\n");
-        return;
-    } */
-    //printf("=== minimax() 入った ===\n"); fflush(stdout);
-    //printf("\nBoard Wm: %llu\n", board_w);
-    //printf("order1\n");
-    //printf("Board Bm: %llu\n", board_b);
-    //printf("depth:%d\n",depth);
-    //printf("order2\n");
-    //printf("depth:%d",depth);
-    //RowCol *legal_list_w = malloc(sizeof(RowCol) * 64);
-    //RowCol *legal_list_b = malloc(sizeof(RowCol) * 64);
-    fflush(stdout);
-    RowCol legal_list_w[64];
-    int legal_list_size_w = 0;
-    get_legal_square("white",board_w,board_b,legal_list_w,&legal_list_size_w);
-    //printf("\norder1\n");
-    RowCol legal_list_b[64];
-    int legal_list_size_b = 0;
-    //printf("\norder2\n");
-    get_legal_square("black",board_w,board_b,legal_list_b,&legal_list_size_b);
-    //printf("\norder3");
-    RowCol result_act = *act;
-    float result_score = *score;
-    if (depth == 0 || is_terminal(board_w,board_b) || (legal_list_size_w==0 && legal_list_size_b==0)){
-        //printf("\n葉ノード");
-        //printf("\nt:%d",true_pass);
-        //printf("\nf:%d",false_pass);
-        *score = evaluate_board(board_w,board_b,true_pass,false_pass);
-        //fflush(stdout);
-        //printf("\nscore:%f\n",*score);
-        //free(legal_list_w);
-        //free(legal_list_b);
-        return;
-    }
-    
-    if (maximizing_player){
-        RowCol* legal_list = legal_list_w;
-        int legal_size = legal_list_size_w;
-        if(legal_size==0){
-            minimax(board_w,board_b,depth,alpha,beta,FALSE,true_pass+1,false_pass,&*act,&*score);
-            return;
-        }
-        float max_eval = -INFINITY;
-        RowCol best_move;
-        
-        //RowCol move_oder_list[64];
-        int move_oder_list_size = legal_size;
-        MoveOrder move_order_list[64];
-        //MoveOrder *move_order_list = malloc(sizeof(MoveOrder) * move_oder_list_size);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = legal_list[i];
-            RowCol flip_list[64];
-            int flip_list_size;
-            uint64_t new_board_w = board_w,new_board_b = board_b;
-            
-            fflush(stdout);
-            identify_flip_stone("white",&new_board_w,&new_board_b,move,1,flip_list,&flip_list_size);
-            RowCol result_act2;
-            float result_score2;
-            /* printf(">>> call:%d",call_count);
-            printf(">>> Trying move (%d, %d) at depth=%d\n", move.row, move.col, depth);
-            printf(">>> New W: 0x%016llX\n", new_board_w);
-            printf(">>> New B: 0x%016llX\n", new_board_b); */
-            minimax(new_board_w,new_board_b,0,alpha,beta,FALSE,true_pass,false_pass,&result_act2,&result_score2);
-            move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
-        }
-        qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_desc);//maximizing_player＝=Falseでは昇順に
-        for(int i=0;i<legal_size;i++){
-            RowCol move = move_order_list[i].move;
-            uint64_t new_board_w = move_order_list[i].newBoardW;
-            uint64_t new_board_b = move_order_list[i].newBoardB;
 
-            float eval;
-            RowCol act2;
-
-            minimax(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval);
-            if (eval > max_eval){
-                max_eval = eval;
-                best_move = move;
-            }
-            alpha = nmax(alpha, eval);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        //printf(">>> return action: (%d,%d)\n", best_move.row, best_move.col);
-        *act = best_move;
-        *score = max_eval;
-        //free(move_order_list);
-        //free(legal_list_w);
-        //free(legal_list_b);
-        return;
-    }else{
-        RowCol* legal_list = legal_list_b;
-        int legal_size = legal_list_size_b;
-        if(legal_size==0){
-            minimax(board_w,board_b,depth,alpha,beta,TRUE,true_pass,false_pass+1,&*act,&*score);
-            return;
-        }
-        float min_eval = INFINITY;
-        RowCol best_move;
-
-        int move_oder_list_size = legal_size;
-        MoveOrder move_order_list[64];
-        //MoveOrder *move_order_list = malloc(sizeof(MoveOrder) * move_oder_list_size);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = legal_list[i];
-            RowCol flip_list[64];
-            int flip_list_size;
-            uint64_t new_board_w = board_w,new_board_b = board_b;
-            identify_flip_stone("black",&new_board_w,&new_board_b,move,1,flip_list,&flip_list_size);
-            RowCol result_act2;
-            float result_score2;
-            minimax(new_board_w,new_board_b,0,alpha,beta,TRUE,true_pass,false_pass,&result_act2,&result_score2);
-            move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
-        }
-        qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_asc);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = move_order_list[i].move;
-            uint64_t new_board_w = move_order_list[i].newBoardW;
-            uint64_t new_board_b = move_order_list[i].newBoardB;
-
-            float eval;
-            RowCol act2;
-
-            minimax(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval);
-            //printf("\nact:(%d,%d),score:%f",move.row,move.col,eval);
-            if (eval < min_eval){
-                min_eval = eval;
-                best_move = move;
-            }
-            beta = nmin(beta, eval);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        *act = best_move;
-        *score = min_eval;
-        //free(move_order_list);
-        //free(legal_list_w);
-        //free(legal_list_b);
-        //printf(">>> return action: (%d,%d)\n", best_move.row, best_move.col);
-        return;
-    }
-}
-
-void minimax_split(uint32_t board_w_high, uint32_t board_w_low,
-                    uint32_t board_b_high, uint32_t board_b_low,
-                    int depth, float alpha, float beta, int maximizing_player,
-                    int true_pass, int false_pass, RowCol *act, float *score) {
-    uint64_t board_w = ((uint64_t)board_w_high << 32) | board_w_low;
-    uint64_t board_b = ((uint64_t)board_b_high << 32) | board_b_low;
-    printf("\nBoard W: 0x%016llX\n", board_w);
-    printf("Board B: 0x%016llX\n", board_b);
-    minimax(board_w, board_b, depth, alpha, beta, maximizing_player, true_pass, false_pass, &*act, &*score);
-}
-
-void minimax2(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta,int maximizing_player,int true_pass,int false_pass,RowCol *act,float *score){
-    /* call_count++;
-    printf("call #%d, depth=%d\n", call_count, depth);
-    printf("board_w: 0x%016llX\n", board_w);
-    printf("board_b: 0x%016llX\n", board_b); */
-    fflush(stdout);
-    const char* shm_name = "my_shm";
-    HANDLE hMapFile = OpenFileMappingA(
-        FILE_MAP_ALL_ACCESS,
-        FALSE,
-        shm_name);
-    int32_t* pBuf = (int32_t*) MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-    if(pBuf[0]!=123){
-        return;
-    }
-    //printf("%d,%d\n",call_count,depth);
-    /* if (call_count > 600) {
-        
-        printf("Recursion limit exceeded\n");
-        return;
-    } */
-    //printf("=== minimax() 入った ===\n"); fflush(stdout);
-    //printf("\nBoard Wm: %llu\n", board_w);
-    //printf("order1\n");
-    //printf("Board Bm: %llu\n", board_b);
-    //printf("depth:%d\n",depth);
-    //printf("order2\n");
-    //printf("depth:%d",depth);
-    RowCol *legal_list_w = malloc(sizeof(RowCol) * 64);
-    RowCol *legal_list_b = malloc(sizeof(RowCol) * 64);
-    fflush(stdout);
-    //RowCol legal_list_w[64];
-    int legal_list_size_w = 0;
-    get_legal_square("white",board_w,board_b,legal_list_w,&legal_list_size_w);
-    //printf("\norder1\n");
-    //RowCol legal_list_b[64];
-    int legal_list_size_b = 0;
-    //printf("\norder2\n");
-    get_legal_square("black",board_w,board_b,legal_list_b,&legal_list_size_b);
-    //printf("\norder3");
-    RowCol result_act = *act;
-    float result_score = *score;
-    if (depth == 0 || is_terminal(board_w,board_b) || (legal_list_size_w==0 && legal_list_size_b==0)){
-        //printf("\n葉ノード");
-        //printf("\nt:%d",true_pass);
-        //printf("\nf:%d",false_pass);
-        *score = evaluate_board(board_w,board_b,true_pass,false_pass);
-        fflush(stdout);
-        //printf("\nscore:%f\n",*score);
-        free(legal_list_w);
-        free(legal_list_b);
-        return;
-    }
-    
-    if (maximizing_player){
-        RowCol* legal_list = legal_list_w;
-        int legal_size = legal_list_size_w;
-        if(legal_size==0){
-            minimax2(board_w,board_b,depth,alpha,beta,FALSE,true_pass+1,false_pass,&result_act,&result_score);
-        }
-        float max_eval = -INFINITY;
-        RowCol best_move;
-        
-        //RowCol move_oder_list[64];
-        int move_oder_list_size = legal_size;
-        //MoveOrder move_order_list[64];
-        MoveOrder *move_order_list = malloc(sizeof(MoveOrder) * move_oder_list_size);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = legal_list[i];
-            RowCol flip_list[64];
-            int flip_list_size;
-            uint64_t new_board_w = board_w,new_board_b = board_b;
-            
-            fflush(stdout);
-            identify_flip_stone("white",&new_board_w,&new_board_b,move,1,flip_list,&flip_list_size);
-            RowCol result_act2;
-            float result_score2;
-            /* printf(">>> call:%d",call_count);
-            printf(">>> Trying move (%d, %d) at depth=%d\n", move.row, move.col, depth);
-            printf(">>> New W: 0x%016llX\n", new_board_w);
-            printf(">>> New B: 0x%016llX\n", new_board_b); */
-            minimax2(new_board_w,new_board_b,0,alpha,beta,FALSE,true_pass,false_pass,&result_act2,&result_score2);
-            move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
-        }
-        qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_desc);//maximizing_player＝=Falseでは昇順に
-        for(int i=0;i<legal_size;i++){
-            RowCol move = move_order_list[i].move;
-            uint64_t new_board_w = move_order_list[i].newBoardW;
-            uint64_t new_board_b = move_order_list[i].newBoardB;
-
-            float eval;
-            RowCol act2;
-
-            minimax2(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval);
-            if (eval > max_eval){
-                max_eval = eval;
-                best_move = move;
-            }
-            alpha = nmax(alpha, eval);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        *act = best_move;
-        *score = max_eval;
-        free(move_order_list);
-        free(legal_list_w);
-        free(legal_list_b);
-        return;
-    }else{
-        RowCol* legal_list = legal_list_b;
-        int legal_size = legal_list_size_b;
-        if(legal_size==0){
-            minimax2(board_w,board_b,depth,alpha,beta,TRUE,true_pass,false_pass+1,&result_act,&result_score);
-        }
-        float min_eval = INFINITY;
-        RowCol best_move;
-
-        int move_oder_list_size = legal_size;
-        //MoveOrder move_order_list[64];
-        MoveOrder *move_order_list = malloc(sizeof(MoveOrder) * move_oder_list_size);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = legal_list[i];
-            RowCol flip_list[64];
-            int flip_list_size;
-            uint64_t new_board_w = board_w,new_board_b = board_b;
-            identify_flip_stone("black",&new_board_w,&new_board_b,move,1,flip_list,&flip_list_size);
-            RowCol result_act2;
-            float result_score2;
-            minimax2(new_board_w,new_board_b,0,alpha,beta,TRUE,true_pass,false_pass,&result_act2,&result_score2);
-            move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
-        }
-        qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_asc);
-        for(int i=0;i<legal_size;i++){
-            RowCol move = move_order_list[i].move;
-            uint64_t new_board_w = move_order_list[i].newBoardW;
-            uint64_t new_board_b = move_order_list[i].newBoardB;
-
-            float eval;
-            RowCol act2;
-
-            minimax2(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval);
-            //printf("\nact:(%d,%d),score:%f",move.row,move.col,eval);
-            if (eval < min_eval){
-                min_eval = eval;
-                best_move = move;
-            }
-            beta = nmin(beta, eval);
-            if (beta <= alpha){
-                break;
-            }
-        }
-        *act = best_move;
-        *score = min_eval;
-        free(move_order_list);
-        free(legal_list_w);
-        free(legal_list_b);
-        return;
-    }
-}
-
-void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta,int maximizing_player,int true_pass,int false_pass,RowCol *act,float *score,
+void minimax(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta,int maximizing_player,int true_pass,int false_pass,RowCol *act,float *score,
     float stable_point,
     float edge_point,
     float num_legal,
@@ -2403,7 +1608,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         //printf("\n葉ノード");
         //printf("\nt:%d",true_pass);
         //printf("\nf:%d",false_pass);
-        *score = evaluate_board3(board_w,board_b,true_pass,false_pass,
+        *score = evaluate_board(board_w,board_b,true_pass,false_pass,
         stable_point,
         edge_point,
         num_legal,
@@ -2434,7 +1639,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         RowCol* legal_list = legal_list_w;
         int legal_size = legal_list_size_w;
         if(legal_size==0){
-            minimax3(board_w,board_b,depth,alpha,beta,FALSE,true_pass+1,false_pass,&*act,&*score,
+            minimax(board_w,board_b,depth,alpha,beta,FALSE,true_pass+1,false_pass,&*act,&*score,
             stable_point,
             edge_point,
             num_legal,
@@ -2477,7 +1682,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             printf(">>> Trying move (%d, %d) at depth=%d\n", move.row, move.col, depth);
             printf(">>> New W: 0x%016llX\n", new_board_w);
             printf(">>> New B: 0x%016llX\n", new_board_b); */
-            result_score2 = evaluate_board3(board_w,board_b,true_pass,false_pass,
+            result_score2 = evaluate_board(board_w,board_b,true_pass,false_pass,
             stable_point,
             edge_point,
             num_legal,
@@ -2508,7 +1713,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             float eval;
             RowCol act2;
             if(i==0){
-                minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
+                minimax(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
                 stable_point,
                 edge_point,
                 num_legal,
@@ -2529,7 +1734,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                 cx_legal_point,
                 corner_legal_point);
             }else{
-                minimax3(new_board_w,new_board_b,depth-1,alpha,alpha+1,FALSE,true_pass,false_pass,&act2,&eval,
+                minimax(new_board_w,new_board_b,depth-1,alpha,alpha+1,FALSE,true_pass,false_pass,&act2,&eval,
                 stable_point,
                 edge_point,
                 num_legal,
@@ -2550,7 +1755,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                 cx_legal_point,
                 corner_legal_point);
                 if(eval>alpha){
-                    minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
+                    minimax(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
                     stable_point,
                     edge_point,
                     num_legal,
@@ -2572,7 +1777,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                     corner_legal_point);
                 }
             }
-            /* minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
+            /* minimax(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
             stable_point,
             edge_point,
             num_legal,
@@ -2612,7 +1817,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         RowCol* legal_list = legal_list_b;
         int legal_size = legal_list_size_b;
         if(legal_size==0){
-            minimax3(board_w,board_b,depth,alpha,beta,TRUE,true_pass,false_pass+1,&*act,&*score,
+            minimax(board_w,board_b,depth,alpha,beta,TRUE,true_pass,false_pass+1,&*act,&*score,
             stable_point,
             edge_point,
             num_legal,
@@ -2648,7 +1853,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             identify_flip_stone("black",&new_board_w,&new_board_b,move,1,flip_list,&flip_list_size);
             RowCol result_act2;
             float result_score2;
-            result_score2 = evaluate_board3(board_w,board_b,true_pass,false_pass,
+            result_score2 = evaluate_board(board_w,board_b,true_pass,false_pass,
             stable_point,
             edge_point,
             num_legal,
@@ -2680,7 +1885,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             RowCol act2;
 
             if(i==0){
-                minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
+                minimax(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
                 stable_point,
                 edge_point,
                 num_legal,
@@ -2701,7 +1906,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                 cx_legal_point,
                 corner_legal_point);
             }else{
-                minimax3(new_board_w,new_board_b,depth-1,alpha,alpha+1,TRUE,true_pass,false_pass,&act2,&eval,
+                minimax(new_board_w,new_board_b,depth-1,alpha,alpha+1,TRUE,true_pass,false_pass,&act2,&eval,
                 stable_point,
                 edge_point,
                 num_legal,
@@ -2722,7 +1927,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                 cx_legal_point,
                 corner_legal_point);
                 if(eval<beta){
-                    minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
+                    minimax(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
                     stable_point,
                     edge_point,
                     num_legal,
@@ -2744,7 +1949,7 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
                     corner_legal_point);
                 }
             }
-            /* minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
+            /* minimax(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
             stable_point,
             edge_point,
             num_legal,
@@ -3070,7 +2275,7 @@ void progress_game_random(struct Individual individual1,int random_color,int *wi
         RowCol act;
         float score;
         if(current_color==-1&&random_color==1){
-            minimax3(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
+            minimax(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
             individual1.weights.stable_point,
             individual1.weights.edge_point,
             individual1.weights.num_legal,
@@ -3091,7 +2296,7 @@ void progress_game_random(struct Individual individual1,int random_color,int *wi
             individual1.weights.cx_legal_point,
             individual1.weights.corner_legal_point);
         }else if(current_color==1&&random_color==-1){
-            minimax3(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
+            minimax(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
             individual1.weights.stable_point,
             individual1.weights.edge_point,
             individual1.weights.num_legal,
@@ -3467,7 +2672,7 @@ void progress_game(struct Individual individual1,struct Individual individual2,i
         RowCol act;
         float score;
         if(current_color==-1){
-            minimax3(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
+            minimax(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
             individual1.weights.stable_point,
             individual1.weights.edge_point,
             individual1.weights.num_legal,
@@ -3488,7 +2693,7 @@ void progress_game(struct Individual individual1,struct Individual individual2,i
             individual1.weights.cx_legal_point,
             individual1.weights.corner_legal_point);
         }else{
-            minimax3(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
+            minimax(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
             individual2.weights.stable_point,
             individual2.weights.edge_point,
             individual2.weights.num_legal,
