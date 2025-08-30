@@ -1003,7 +1003,7 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
     int turn = 60 - bit_count(empty);
     float alpha = nmin(nmax(0,(turn -40) / 10),1);
     float beta = nmin(nmax(0,(turn -25) / 15),1);
-    int con_weight=100;
+    int stable_point=100;
     
     float spread_score = 0,open_stones_score = 0,connected_pairs_score = 0;
     float b_snum = bit_count(board_b);
@@ -1130,27 +1130,27 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         if(w_num==6){
             int dec = 0;
             if(b_c_num==1&&w_c_num==0){
-                dec_point += 6*con_weight*0.9;
+                dec_point += 6*stable_point*0.9;
                 dec = 1;
             }
             if(b_c_legal_num>0){
-                dec_point += 6*con_weight* 0.8;
+                dec_point += 6*stable_point* 0.8;
                 dec = 1;
             }
             if(b_c_num==0){
-                add_point += 6*con_weight* 0.3;
+                add_point += 6*stable_point* 0.3;
             }
         }
         
         /* if((w_num+b_num)==6&&w_c_num<=1&&b_num!=0){
-            dec_point += (6-edge_con_num_w)*con_weight*0.9;
+            dec_point += (6-edge_con_num_w)*stable_point*0.9;
         } */
         if((w_num+b_num)==6&&b_num!=0){
             if(w_c_num<=1){
-                dec_point += (6-edge_con_num_w)*con_weight*0.9;
+                dec_point += (6-edge_con_num_w)*stable_point*0.9;
             }
             if((edge_con_num_w+edge_con_num_b)<=5&&w_c_num==1&&w_c_legal_num==1){
-                dec_point += (b_num-edge_con_num_b)*con_weight*0.9;
+                dec_point += (b_num-edge_con_num_b)*stable_point*0.9;
             }
         }
         //printf("\nadd:%d\ndec:%d",add_point,dec_point);
@@ -1160,69 +1160,69 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         add_point = 0;
         /* if(b_num<=3){
             if(b_c_legal_num>=1&&(b_num+w_num)>=5){
-                edge_point_w -= w_num*con_weight/10;
+                edge_point_w -= w_num*stable_point/10;
             }else{
                 if(b_num<=0){
-                    edge_point_w += w_num*con_weight/20;
+                    edge_point_w += w_num*stable_point/20;
                 }
             }
         } */
         /* if(b_num<=0){
-            edge_point_w += w_num*con_weight/10;
+            edge_point_w += w_num*stable_point/10;
         }else{
-            edge_point_w -= w_num*con_weight/10;
+            edge_point_w -= w_num*stable_point/10;
         } */
         if(b_num==6){
             int dec = 0;
             if(w_c_num==1&&b_c_num==0){
-                dec_point += 6*con_weight*0.9;
+                dec_point += 6*stable_point*0.9;
                 dec = 1;
-                //printf("\n1:%f",10*6*con_weight* (4.0/5)/10);
+                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
             }
             if(w_c_legal_num>0){
-                dec_point += 6*con_weight* 0.8;
+                dec_point += 6*stable_point* 0.8;
                 dec = 1;
-                //printf("\n2:%f",10*6*con_weight* (3.0/5)/10);
+                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
             }
             if(dec==0){
-                add_point += 6*con_weight* 0.3;
-                //printf("\n3:%f",10*6*con_weight* (4.0/5)/10);
+                add_point += 6*stable_point* 0.3;
+                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
             }
         }
         /* if((w_num+b_num)==6&&b_c_num<=1&&w_num!=0){
-            dec_point += (6-edge_con_num_b)*con_weight*0.9;
+            dec_point += (6-edge_con_num_b)*stable_point*0.9;
         } */
         if((w_num+b_num)==6&&w_num!=0){
             if(b_c_num<=1){
-                dec_point += (6-edge_con_num_b)*con_weight*0.9;
+                dec_point += (6-edge_con_num_b)*stable_point*0.9;
             }
             if((edge_con_num_b+edge_con_num_w)<=5&&b_c_num==1&&b_c_legal_num==1){
-                dec_point += (w_num-edge_con_num_w)*con_weight*0.9;
+                dec_point += (w_num-edge_con_num_w)*stable_point*0.9;
             }
         }
         edge_point_b += add_point;// + b_c_legal_num*6*0.4;
         edge_point_b -= dec_point;
         /* if(w_num<=3){
             if((w_c_legal_num>=1&&(b_num+w_num)>=5)){
-                edge_point_b -= b_num*con_weight/10;
+                edge_point_b -= b_num*stable_point/10;
             }else{
                 if(w_num<=0){
-                    edge_point_b += b_num*con_weight/20;
+                    edge_point_b += b_num*stable_point/20;
                 }
             }
         } */
         /* if(w_num<=0){
-            edge_point_b += b_num*con_weight/10;
+            edge_point_b += b_num*stable_point/10;
         }else{
-            edge_point_b -= b_num*con_weight/10;
+            edge_point_b -= b_num*stable_point/10;
         } */
-        //printf("\nnum:%d",b_num*con_weight*1/20);
+        //printf("\nnum:%d",b_num*stable_point*1/20);
         
     }
     //
     edge_point = edge_point_w - edge_point_b;
     //edge_point *= 0.3f;
-    float pattern_point = (position_point(board_w) - position_point(board_b))*con_weight*0.9f;
+    float pattern_point = (position_point(board_w) - position_point(board_b))*stable_point*0.9f;
     //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
     
     //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
@@ -1240,18 +1240,18 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         lose_keikoku = -1000;
     }
     float pass_bonus = false_pass-true_pass;
-    int board_weight,connect_weight,spread_weight;
-    board_weight = 10;
-    connect_weight = 10;
-    spread_weight = 20;
+    int board_score,connect_pairs_point,spread_point;
+    board_score = 10;
+    connect_pairs_point = 10;
+    spread_point = 20;
     
-    float score = (1-alpha) * (dis_num*2 +  board_score*board_weight + (touch_other*10+connected_pairs_score*connect_weight+open_stones_score*10 + spread_score*spread_weight)*(1-beta)) + alpha * (dis_num*0+(w_snum-b_snum)*10+(legal_list_size_w-legal_list_size_b)*10+connected_pairs_score*10);
+    float score = (1-alpha) * (dis_num*2 +  board_score*board_score + (touch_other*10+connected_pairs_score*connect_pairs_point+open_stones_score*10 + spread_score*spread_point)*(1-beta)) + alpha * (dis_num*0+(w_snum-b_snum)*10+(legal_list_size_w-legal_list_size_b)*10+connected_pairs_score*10);
 
     //
 
 
     //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*con_weight*10 + edge_point*10)/10);
+    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
     //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
     //free(legal_list_w);
     //free(legal_list_b);
@@ -1262,14 +1262,14 @@ float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float fa
     if (turn >= 20) {
         score += (pass_bonus) * 500.0f;
     }
-    return ((float)(score + con_score*con_weight + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + pattern_point;
-    //return (float)((score*10 + con_score*con_weight*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
+    return ((float)(score + con_score*stable_point + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + pattern_point;
+    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
 }
 
 
 
 float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass){
-    int con_weight = 100;
+    int stable_point = 100;
     uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
     int turn = 64 - bit_count(empty);
     float alpha = nmin(nmax(0,(turn -35) / 20),1);
@@ -1404,15 +1404,15 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
         if(w_num==6){
             int dec = 0;
             if(bit_count(b_corner)==1&&bit_count(w_corner)==0){
-                dec_point += 10*6*con_weight* 4/5/10;
+                dec_point += 10*6*stable_point* 4/5/10;
                 dec = 1;
             }
             if(bit_count(b_corner_legal)>0){
-                dec_point += 10*6*con_weight* 3/5/10;
+                dec_point += 10*6*stable_point* 3/5/10;
                 dec = 1;
             }
             if(dec==0){
-                add_point += 10*6*con_weight* 4/5/10;
+                add_point += 10*6*stable_point* 4/5/10;
             }
         }
         //printf("\nadd:%d\ndec:%d",add_point,dec_point);
@@ -1421,30 +1421,30 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
         dec_point = 0;
         add_point = 0;
         if(b_num == 0){
-            edge_point_w += w_num*con_weight*1/20;
+            edge_point_w += w_num*stable_point*1/20;
         }
         if(b_num==6){
             int dec = 0;
             if(bit_count(w_corner)==1&&bit_count(b_corner)==0){
-                dec_point += 10*6*con_weight* 4/5/10;
+                dec_point += 10*6*stable_point* 4/5/10;
                 dec = 1;
-                //printf("\n1:%f",10*6*con_weight* (4.0/5)/10);
+                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
             }
             if(bit_count(w_corner_legal)>0){
-                dec_point += 10*6*con_weight* 3/5/10;
+                dec_point += 10*6*stable_point* 3/5/10;
                 dec = 1;
-                //printf("\n2:%f",10*6*con_weight* (3.0/5)/10);
+                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
             }
             if(dec==0){
-                add_point += 10*6*con_weight* 4/5/10;
-                //printf("\n3:%f",10*6*con_weight* (4.0/5)/10);
+                add_point += 10*6*stable_point* 4/5/10;
+                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
             }
         }
         edge_point_b += add_point;
         edge_point_b -= dec_point;
         if (w_num==0){
-            edge_point_b += b_num*con_weight*1/20;
-            //printf("\nnum:%d",b_num*con_weight*1/20);
+            edge_point_b += b_num*stable_point*1/20;
+            //printf("\nnum:%d",b_num*stable_point*1/20);
         }
     }
     //fflush(stdout);
@@ -1472,32 +1472,32 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
 
 
     //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*con_weight*10 + edge_point*10)/10);
+    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
     //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
     //free(legal_list_w);
     //free(legal_list_b);
     //printf("\ndef_cx3");
-    return ((float)(score*10 + con_score*con_weight*10 + edge_point*10) / 10.0f) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90.0f*alpha);
-    //return (float)((score*10 + con_score*con_weight*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
+    return ((float)(score*10 + con_score*stable_point*10 + edge_point*10) / 10.0f) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90.0f*alpha);
+    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
 }
 
 float evaluate_board2(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
-    float con_weight,
-    float edge_weight,
-    float dis_num_weight,
-    float board_weight,
-    float dis_sum_weight,
-    float legal_dis_weight,
-    float connect_weight,
-    float spread_weight,
-    float open_weight,
+    float stable_point,
+    float edge_point,
+    float num_legal,
+    float board_score,
+    float sum_point,
+    float num_legal2,
+    float connect_pairs_point,
+    float spread_point,
+    float open_stones_point,
     float alpha_start,
     float alpha_speed,
     float beta_start,
     float beta_speed,
-    float pass_weight
+    float num_pass
     ){
-    //int con_weight = 100;
+    //int stable_point = 100;
     uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
     int turn = 64 - bit_count(empty);
     float alpha = nmin(nmax(0,(turn -alpha_start) / alpha_speed),1);
@@ -1627,24 +1627,24 @@ float evaluate_board2(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         if(w_num==6){
             int dec = 0;
             if(b_c_num==1&&w_c_num==0){
-                dec_point += 6*con_weight*0.9;
+                dec_point += 6*stable_point*0.9;
                 dec = 1;
             }
             if(b_c_legal_num>0){
-                dec_point += 6*con_weight* 0.8;
+                dec_point += 6*stable_point* 0.8;
                 dec = 1;
             }
             if(b_c_num==0){
-                add_point += 6*con_weight* 0.3;
+                add_point += 6*stable_point* 0.3;
             }
         }
         
         if((w_num+b_num)==6&&b_num!=0){
             if(w_c_num<=1){
-                dec_point += (6-edge_con_num_w)*con_weight*0.9;
+                dec_point += (6-edge_con_num_w)*stable_point*0.9;
             }
             if((edge_con_num_w+edge_con_num_b)<=5&&w_c_num==1&&w_c_legal_num==1){
-                dec_point += (b_num-edge_con_num_b)*con_weight*0.9;
+                dec_point += (b_num-edge_con_num_b)*stable_point*0.9;
             }
         }
         //printf("\nadd:%d\ndec:%d",add_point,dec_point);
@@ -1654,53 +1654,53 @@ float evaluate_board2(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         add_point = 0;
         /* if(b_num<=3){
             if(b_c_legal_num>=1&&(b_num+w_num)>=5){
-                edge_point_w -= w_num*con_weight/10;
+                edge_point_w -= w_num*stable_point/10;
             }else{
                 if(b_num<=0){
-                    edge_point_w += w_num*con_weight/20;
+                    edge_point_w += w_num*stable_point/20;
                 }
             }
         } */
         /* if(b_num<=0){
-            edge_point_w += w_num*con_weight/10;
+            edge_point_w += w_num*stable_point/10;
         }else{
-            edge_point_w -= w_num*con_weight/10;
+            edge_point_w -= w_num*stable_point/10;
         } */
         if(b_num==6){
             int dec = 0;
             if(w_c_num==1&&b_c_num==0){
-                dec_point += 6*con_weight*0.9;
+                dec_point += 6*stable_point*0.9;
                 dec = 1;
-                //printf("\n1:%f",10*6*con_weight* (4.0/5)/10);
+                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
             }
             if(w_c_legal_num>0){
-                dec_point += 6*con_weight* 0.8;
+                dec_point += 6*stable_point* 0.8;
                 dec = 1;
-                //printf("\n2:%f",10*6*con_weight* (3.0/5)/10);
+                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
             }
             if(dec==0){
-                add_point += 6*con_weight* 0.3;
-                //printf("\n3:%f",10*6*con_weight* (4.0/5)/10);
+                add_point += 6*stable_point* 0.3;
+                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
             }
         }
         if((w_num+b_num)==6&&w_num!=0){
             if(b_c_num<=1){
-                dec_point += (6-edge_con_num_b)*con_weight*0.9;
+                dec_point += (6-edge_con_num_b)*stable_point*0.9;
             }
             if((edge_con_num_b+edge_con_num_w)<=5&&b_c_num==1&&b_c_legal_num==1){
-                dec_point += (w_num-edge_con_num_w)*con_weight*0.9;
+                dec_point += (w_num-edge_con_num_w)*stable_point*0.9;
             }
         }
         edge_point_b += add_point;
         edge_point_b -= dec_point;
         /* if (w_num==0){
-            edge_point_b += b_num*con_weight*1/20;
-            //printf("\nnum:%d",b_num*con_weight*1/20);
+            edge_point_b += b_num*stable_point*1/20;
+            //printf("\nnum:%d",b_num*stable_point*1/20);
         } */
     }
     //fflush(stdout);
     edge_point = edge_point_w - edge_point_b;
-    edge_point *= edge_weight;
+    edge_point *= edge_point;
     //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
     dis_num = legal_list_size_w - legal_list_size_b -w_cx+b_cx;
     //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
@@ -1718,45 +1718,45 @@ float evaluate_board2(uint64_t board_w,uint64_t board_b,float true_pass,float fa
     }
     float pass_bonus = false_pass-true_pass;
 
-    float score = (1-alpha) * (dis_num*dis_num_weight +  board_score*board_weight + (connected_pairs_score*connect_weight + open_stones_score*open_weight + spread_score*spread_weight)*(1-beta)) + alpha * ((w_snum-b_snum)*dis_sum_weight+(legal_list_size_w-legal_list_size_b)*legal_dis_weight);
+    float score = (1-alpha) * (dis_num*num_legal +  board_score*board_score + (connected_pairs_score*connect_pairs_point + open_stones_score*open_stones_point + spread_score*spread_point)*(1-beta)) + alpha * ((w_snum-b_snum)*sum_point+(legal_list_size_w-legal_list_size_b)*num_legal2);
 
     //fflush(stdout);
 
 
     //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*con_weight*10 + edge_point*10)/10);
+    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
     //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
     //free(legal_list_w);
     //free(legal_list_b);
     //printf("\ndef_cx3");
     if (turn >= 30) {
-        score += (pass_bonus) * pass_weight;
+        score += (pass_bonus) * num_pass;
     }
-    return ((float)(score + con_score*con_weight + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku;
-    //return (float)((score*10 + con_score*con_weight*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
+    return ((float)(score + con_score*stable_point + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku;
+    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
 }
 float evaluate_board3(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
-    float con_weight,
-    float edge_weight,
-    float dis_num_weight,
-    float board_weight,
-    float dis_sum_weight,
-    float legal_dis_weight,
-    float connect_weight,
-    float spread_weight,
-    float open_weight,
+    float stable_point,
+    float edge_point,
+    float num_legal,
+    float board_score,
+    float sum_point,
+    float num_legal2,
+    float connect_pairs_point,
+    float spread_point,
+    float open_stones_point,
     float alpha_start,
     float alpha_speed,
     float beta_start,
     float beta_speed,
-    float pass_weight,
-    float touch_weight,
-    float pattern_weight,
-    float connect_weight2,
-    float cx_point_weight,
-    float corner_point_weight
+    float num_pass,
+    float touch_other_point,
+    float pattern_point,
+    float connect_pairs_point2,
+    float cx_legal_point,
+    float corner_legal_point
     ){
-    //con_weight = 100;
+    //stable_point = 100;
     uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
     int turn = 64 - bit_count(empty);
     float alpha = nmin(nmax(0,(turn -alpha_start) / alpha_speed),1);
@@ -1900,20 +1900,20 @@ float evaluate_board3(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         if(w_num==6){
             int dec = 0;
             if(b_c_num==1&&w_c_num==0){
-                dec_point += 10*6*con_weight* 4/5/10;
+                dec_point += 10*6*stable_point* 4/5/10;
                 dec = 1;
             }
             if(bit_count(b_corner_legal)>0){
-                dec_point += 10*6*con_weight* 3/5/10;
+                dec_point += 10*6*stable_point* 3/5/10;
                 dec = 1;
             }
             if(dec==0){
-                add_point += 10*6*con_weight* 4/5/10;
+                add_point += 10*6*stable_point* 4/5/10;
             }
         }
         for(int k=0;k<8;k++){
             if((((m_e_list[i]|m_c_list[i])&board_w)&edge_pattern[k])==edge_pattern[k]&&w_num==5&&w_c_num==1&&b_c_num==0){
-                dec_point +=8*con_weight*0.9f;
+                dec_point +=8*stable_point*0.9f;
             }
         }
         //printf("\nadd:%d\ndec:%d",add_point,dec_point);
@@ -1922,52 +1922,52 @@ float evaluate_board3(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         dec_point = 0;
         add_point = 0;
         if(b_num == 0&&w_c_num==0&&b_c_num==0){
-            edge_point_w += w_num*con_weight*0.2f;
+            edge_point_w += w_num*stable_point*0.2f;
         }else if(w_num<=6&&b_c_num==1&&w_c_num==0){
-            edge_point_w -= w_num*con_weight*0.9f;
+            edge_point_w -= w_num*stable_point*0.9f;
         }
         if(b_num==6){
             int dec = 0;
             if(w_c_num==1&&b_c_num==0){
-                dec_point += 10*6*con_weight* 4/5/10;
+                dec_point += 10*6*stable_point* 4/5/10;
                 dec = 1;
-                //printf("\n1:%f",10*6*con_weight* (4.0/5)/10);
+                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
             }
             if(bit_count(w_corner_legal)>0){
-                dec_point += 10*6*con_weight* 3/5/10;
+                dec_point += 10*6*stable_point* 3/5/10;
                 dec = 1;
-                //printf("\n2:%f",10*6*con_weight* (3.0/5)/10);
+                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
             }
             if(dec==0){
-                add_point += 10*6*con_weight* 4/5/10;
-                //printf("\n3:%f",10*6*con_weight* (4.0/5)/10);
+                add_point += 10*6*stable_point* 4/5/10;
+                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
             }
         }
         for(int k=0;k<8;k++){
             if((((m_e_list[i]|m_c_list[i])&board_b)&edge_pattern[k])==edge_pattern[k]&&b_num==5&&b_c_num==1&&w_c_num==0){
-                dec_point += 8*con_weight*0.9f;
+                dec_point += 8*stable_point*0.9f;
             }
         }
         edge_point_b += add_point;
         edge_point_b -= dec_point;
         if (w_num==0&&w_c_num==0&&b_c_num==0){
-            edge_point_b += b_num*con_weight*0.2f;
-            //printf("\nnum:%d",b_num*con_weight*1/20);
+            edge_point_b += b_num*stable_point*0.2f;
+            //printf("\nnum:%d",b_num*stable_point*1/20);
         }else if(b_num<=6&&w_c_num==1&&b_c_num==0){
-            edge_point_b -= b_num*con_weight*0.9f;
+            edge_point_b -= b_num*stable_point*0.9f;
         }
     }
     //fflush(stdout);
     edge_point = edge_point_w - edge_point_b;
     //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
-    dis_num = legal_list_size_w - legal_list_size_b -(w_cx-b_cx)*cx_point_weight+(w_corner_num-b_corner_num)*corner_point_weight;
+    dis_num = legal_list_size_w - legal_list_size_b -(w_cx-b_cx)*cx_legal_point+(w_corner_num-b_corner_num)*corner_legal_point;
     //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
     int white_score=0,black_score=0;
     eval_bitboard_score(board_w,board_b,&white_score,&black_score);
 
     float board_score = white_score - black_score*1.5f;
     float pattern_point = 0;
-    pattern_point = (position_point(board_w) - position_point(board_b))*con_weight*pattern_weight;
+    pattern_point = (position_point(board_w) - position_point(board_b))*stable_point*pattern_point;
     /* int b_snum = bit_count(board_b);
     int w_snum = bit_count(board_w); */
     float lose_keikoku = 0;
@@ -1976,20 +1976,20 @@ float evaluate_board3(uint64_t board_w,uint64_t board_b,float true_pass,float fa
         lose_keikoku = -1000;
     }
     float pass_bonus = false_pass-true_pass;
-    float score = (1-alpha) * (dis_num*dis_num_weight + board_score*board_weight + (touch_other*touch_weight+connected_pairs_score*connect_weight+open_stones_score*open_weight + spread_score*spread_weight)*(1-beta)) + alpha * ((w_snum-b_snum)*con_weight*dis_sum_weight+(legal_list_size_w-legal_list_size_b)*legal_dis_weight+connected_pairs_score*connect_weight2);
+    float score = (1-alpha) * (dis_num*num_legal + board_score*board_score + (touch_other*touch_other_point+connected_pairs_score*connect_pairs_point+open_stones_score*open_stones_point + spread_score*spread_point)*(1-beta)) + alpha * ((w_snum-b_snum)*stable_point*sum_point+(legal_list_size_w-legal_list_size_b)*num_legal2+connected_pairs_score*connect_pairs_point2);
     //float score = (1-alpha) * (dis_num*300/100 +  board_score*200/100) + alpha * ((w_snum-b_snum)*5000/100+(legal_list_size_w-legal_list_size_b)*400/100);
 
     //fflush(stdout);
 
 
     //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*con_weight*10 + edge_point*10)/10);
+    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
     //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
     //free(legal_list_w);
     //free(legal_list_b);
     //printf("\ndef_cx3");
-    return ((float)(score + con_score*con_weight + edge_point*edge_weight)) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*pass_weight) + pattern_point;
-    //return (float)((score*10 + con_score*con_weight*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
+    return ((float)(score + con_score*stable_point + edge_point*edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*num_pass) + pattern_point;
+    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
 }
 
 int is_terminal(uint64_t board_w,uint64_t board_b){
@@ -2347,25 +2347,25 @@ void minimax2(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
 }
 
 void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta,int maximizing_player,int true_pass,int false_pass,RowCol *act,float *score,
-    float con_weight,
-    float edge_weight,
-    float dis_num_weight,
-    float board_weight,
-    float dis_sum_weight,
-    float legal_dis_weight,
-    float connect_weight,
-    float spread_weight,
-    float open_weight,
+    float stable_point,
+    float edge_point,
+    float num_legal,
+    float board_score,
+    float sum_point,
+    float num_legal2,
+    float connect_pairs_point,
+    float spread_point,
+    float open_stones_point,
     float alpha_start,
     float alpha_speed,
     float beta_start,
     float beta_speed,
-    float pass_weight,
-    float touch_weight,
-    float pattern_weight,
-    float connect_weight2,
-    float cx_point_weight,
-    float corner_point_weight
+    float num_pass,
+    float touch_other_point,
+    float pattern_point,
+    float connect_pairs_point2,
+    float cx_legal_point,
+    float corner_legal_point
 ){
     /* call_count++;
     printf("call #%d, depth=%d\n", call_count, depth);
@@ -2404,25 +2404,25 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         //printf("\nt:%d",true_pass);
         //printf("\nf:%d",false_pass);
         *score = evaluate_board3(board_w,board_b,true_pass,false_pass,
-        con_weight,
-        edge_weight,
-        dis_num_weight,
-        board_weight,
-        dis_sum_weight,
-        legal_dis_weight,
-        connect_weight,
-        spread_weight,
-        open_weight,
+        stable_point,
+        edge_point,
+        num_legal,
+        board_score,
+        sum_point,
+        num_legal2,
+        connect_pairs_point,
+        spread_point,
+        open_stones_point,
         alpha_start,
         alpha_speed,
         beta_start,
         beta_speed,
-        pass_weight,
-        touch_weight,
-        pattern_weight,
-        connect_weight2,
-        cx_point_weight,
-        corner_point_weight);
+        num_pass,
+        touch_other_point,
+        pattern_point,
+        connect_pairs_point2,
+        cx_legal_point,
+        corner_legal_point);
         //fflush(stdout);
         //printf("\nscore:%f\n",*score);
         //free(legal_list_w);
@@ -2435,25 +2435,25 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         int legal_size = legal_list_size_w;
         if(legal_size==0){
             minimax3(board_w,board_b,depth,alpha,beta,FALSE,true_pass+1,false_pass,&*act,&*score,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight);
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point);
             return;
         }
         float max_eval = -INFINITY;
@@ -2478,25 +2478,25 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             printf(">>> New W: 0x%016llX\n", new_board_w);
             printf(">>> New B: 0x%016llX\n", new_board_b); */
             result_score2 = evaluate_board3(board_w,board_b,true_pass,false_pass,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight);
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point);
             move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
         }
         qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_desc);//maximizing_player＝=Falseでは昇順に
@@ -2509,89 +2509,89 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             RowCol act2;
             if(i==0){
                 minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
-                con_weight,
-                edge_weight,
-                dis_num_weight,
-                board_weight,
-                dis_sum_weight,
-                legal_dis_weight,
-                connect_weight,
-                spread_weight,
-                open_weight,
+                stable_point,
+                edge_point,
+                num_legal,
+                board_score,
+                sum_point,
+                num_legal2,
+                connect_pairs_point,
+                spread_point,
+                open_stones_point,
                 alpha_start,
                 alpha_speed,
                 beta_start,
                 beta_speed,
-                pass_weight,
-                touch_weight,
-                pattern_weight,
-                connect_weight2,
-                cx_point_weight,
-                corner_point_weight);
+                num_pass,
+                touch_other_point,
+                pattern_point,
+                connect_pairs_point2,
+                cx_legal_point,
+                corner_legal_point);
             }else{
                 minimax3(new_board_w,new_board_b,depth-1,alpha,alpha+1,FALSE,true_pass,false_pass,&act2,&eval,
-                con_weight,
-                edge_weight,
-                dis_num_weight,
-                board_weight,
-                dis_sum_weight,
-                legal_dis_weight,
-                connect_weight,
-                spread_weight,
-                open_weight,
+                stable_point,
+                edge_point,
+                num_legal,
+                board_score,
+                sum_point,
+                num_legal2,
+                connect_pairs_point,
+                spread_point,
+                open_stones_point,
                 alpha_start,
                 alpha_speed,
                 beta_start,
                 beta_speed,
-                pass_weight,
-                touch_weight,
-                pattern_weight,
-                connect_weight2,
-                cx_point_weight,
-                corner_point_weight);
+                num_pass,
+                touch_other_point,
+                pattern_point,
+                connect_pairs_point2,
+                cx_legal_point,
+                corner_legal_point);
                 if(eval>alpha){
                     minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
-                    con_weight,
-                    edge_weight,
-                    dis_num_weight,
-                    board_weight,
-                    dis_sum_weight,
-                    legal_dis_weight,
-                    connect_weight,
-                    spread_weight,
-                    open_weight,
+                    stable_point,
+                    edge_point,
+                    num_legal,
+                    board_score,
+                    sum_point,
+                    num_legal2,
+                    connect_pairs_point,
+                    spread_point,
+                    open_stones_point,
                     alpha_start,
                     alpha_speed,
                     beta_start,
                     beta_speed,
-                    pass_weight,
-                    touch_weight,
-                    pattern_weight,
-                    connect_weight2,
-                    cx_point_weight,
-                    corner_point_weight);
+                    num_pass,
+                    touch_other_point,
+                    pattern_point,
+                    connect_pairs_point2,
+                    cx_legal_point,
+                    corner_legal_point);
                 }
             }
             /* minimax3(new_board_w,new_board_b,depth-1,alpha,beta,FALSE,true_pass,false_pass,&act2,&eval,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight); */
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point); */
             if (eval > max_eval){
                 max_eval = eval;
                 best_move = move;
@@ -2613,25 +2613,25 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
         int legal_size = legal_list_size_b;
         if(legal_size==0){
             minimax3(board_w,board_b,depth,alpha,beta,TRUE,true_pass,false_pass+1,&*act,&*score,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight);
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point);
             return;
         }
         float min_eval = INFINITY;
@@ -2649,25 +2649,25 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
             RowCol result_act2;
             float result_score2;
             result_score2 = evaluate_board3(board_w,board_b,true_pass,false_pass,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight);
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point);
             move_order_list[i] = (MoveOrder){result_score2,move,new_board_w,new_board_b};
         }
         qsort(move_order_list, move_oder_list_size, sizeof(MoveOrder), compare_move_order_asc);
@@ -2681,89 +2681,89 @@ void minimax3(uint64_t board_w,uint64_t board_b,int depth,float alpha,float beta
 
             if(i==0){
                 minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
-                con_weight,
-                edge_weight,
-                dis_num_weight,
-                board_weight,
-                dis_sum_weight,
-                legal_dis_weight,
-                connect_weight,
-                spread_weight,
-                open_weight,
+                stable_point,
+                edge_point,
+                num_legal,
+                board_score,
+                sum_point,
+                num_legal2,
+                connect_pairs_point,
+                spread_point,
+                open_stones_point,
                 alpha_start,
                 alpha_speed,
                 beta_start,
                 beta_speed,
-                pass_weight,
-                touch_weight,
-                pattern_weight,
-                connect_weight2,
-                cx_point_weight,
-                corner_point_weight);
+                num_pass,
+                touch_other_point,
+                pattern_point,
+                connect_pairs_point2,
+                cx_legal_point,
+                corner_legal_point);
             }else{
                 minimax3(new_board_w,new_board_b,depth-1,alpha,alpha+1,TRUE,true_pass,false_pass,&act2,&eval,
-                con_weight,
-                edge_weight,
-                dis_num_weight,
-                board_weight,
-                dis_sum_weight,
-                legal_dis_weight,
-                connect_weight,
-                spread_weight,
-                open_weight,
+                stable_point,
+                edge_point,
+                num_legal,
+                board_score,
+                sum_point,
+                num_legal2,
+                connect_pairs_point,
+                spread_point,
+                open_stones_point,
                 alpha_start,
                 alpha_speed,
                 beta_start,
                 beta_speed,
-                pass_weight,
-                touch_weight,
-                pattern_weight,
-                connect_weight2,
-                cx_point_weight,
-                corner_point_weight);
+                num_pass,
+                touch_other_point,
+                pattern_point,
+                connect_pairs_point2,
+                cx_legal_point,
+                corner_legal_point);
                 if(eval<beta){
                     minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
-                    con_weight,
-                    edge_weight,
-                    dis_num_weight,
-                    board_weight,
-                    dis_sum_weight,
-                    legal_dis_weight,
-                    connect_weight,
-                    spread_weight,
-                    open_weight,
+                    stable_point,
+                    edge_point,
+                    num_legal,
+                    board_score,
+                    sum_point,
+                    num_legal2,
+                    connect_pairs_point,
+                    spread_point,
+                    open_stones_point,
                     alpha_start,
                     alpha_speed,
                     beta_start,
                     beta_speed,
-                    pass_weight,
-                    touch_weight,
-                    pattern_weight,
-                    connect_weight2,
-                    cx_point_weight,
-                    corner_point_weight);
+                    num_pass,
+                    touch_other_point,
+                    pattern_point,
+                    connect_pairs_point2,
+                    cx_legal_point,
+                    corner_legal_point);
                 }
             }
             /* minimax3(new_board_w,new_board_b,depth-1,alpha,beta,TRUE,true_pass,false_pass,&act2,&eval,
-            con_weight,
-            edge_weight,
-            dis_num_weight,
-            board_weight,
-            dis_sum_weight,
-            legal_dis_weight,
-            connect_weight,
-            spread_weight,
-            open_weight,
+            stable_point,
+            edge_point,
+            num_legal,
+            board_score,
+            sum_point,
+            num_legal2,
+            connect_pairs_point,
+            spread_point,
+            open_stones_point,
             alpha_start,
             alpha_speed,
             beta_start,
             beta_speed,
-            pass_weight,
-            touch_weight,
-            pattern_weight,
-            connect_weight2,
-            cx_point_weight,
-            corner_point_weight); */
+            num_pass,
+            touch_other_point,
+            pattern_point,
+            connect_pairs_point2,
+            cx_legal_point,
+            corner_legal_point); */
             //printf("\nact:(%d,%d),score:%f",move.row,move.col,eval);
             if (eval < min_eval){
                 min_eval = eval;
@@ -2805,25 +2805,25 @@ float rand_float2(float a, float b) {
 
 
 struct Weights {
-    float con_weight;
-    float edge_weight;
-    float dis_num_weight;
-    float board_weight;
-    float dis_sum_weight;
-    float legal_dis_weight;
-    float connect_weight;
-    float spread_weight;
-    float open_weight;
+    float stable_point;
+    float edge_point;
+    float num_legal;
+    float board_score;
+    float sum_point;
+    float num_legal2;
+    float connect_pairs_point;
+    float spread_point;
+    float open_stones_point;
     float alpha_start;
     float alpha_speed;
     float beta_start;
     float beta_speed;
-    float pass_weight;
-    float touch_weight;
-    float pattern_weight;
-    float connect_weight2;
-    float cx_point_weight;
-    float corner_point_weight;
+    float num_pass;
+    float touch_other_point;
+    float pattern_point;
+    float connect_pairs_point2;
+    float cx_legal_point;
+    float corner_legal_point;
 };
 
 struct Individual {
@@ -2845,57 +2845,57 @@ float stone_diffs[9][100000];
 
 void test_init(){
     
-    /* weights_test[0].weights.con_weight = 100;
-    weights_test[0].weights.edge_weight = 0.59;
-    weights_test[0].weights.dis_num_weight = 9.57;
-    weights_test[0].weights.board_weight = 4.12;
-    weights_test[0].weights.dis_sum_weight = -0.75;
-    weights_test[0].weights.legal_dis_weight = 17.93;
-    weights_test[0].weights.connect_weight = -61.89;
-    weights_test[0].weights.spread_weight = 35.47;
-    weights_test[0].weights.open_weight = 14.78;
+    /* weights_test[0].weights.stable_point = 100;
+    weights_test[0].weights.edge_point = 0.59;
+    weights_test[0].weights.num_legal = 9.57;
+    weights_test[0].weights.board_score = 4.12;
+    weights_test[0].weights.sum_point = -0.75;
+    weights_test[0].weights.num_legal2 = 17.93;
+    weights_test[0].weights.connect_pairs_point = -61.89;
+    weights_test[0].weights.spread_point = 35.47;
+    weights_test[0].weights.open_stones_point = 14.78;
     weights_test[0].weights.alpha_start = 52.14;
     weights_test[0].weights.alpha_speed = 50.78;
     weights_test[0].weights.beta_start = 6.36;
     weights_test[0].weights.beta_speed = 4.47;
-    weights_test[0].weights.pass_weight = -2.24;
-    weights_test[0].weights.touch_weight = -20.14;
-    weights_test[0].weights.pattern_weight = -0.05;
-    weights_test[0].weights.connect_weight2 = -25.13;
-    weights_test[0].weights.cx_point_weight = 0.35;
-    weights_test[0].weights.corner_point_weight = -5.47; */
+    weights_test[0].weights.num_pass = -2.24;
+    weights_test[0].weights.touch_other_point = -20.14;
+    weights_test[0].weights.pattern_point = -0.05;
+    weights_test[0].weights.connect_pairs_point2 = -25.13;
+    weights_test[0].weights.cx_legal_point = 0.35;
+    weights_test[0].weights.corner_legal_point = -5.47; */
 
-    FILE *fp = fopen("weights1_2/weights_gen6199.bin", "rb");//64位
+    FILE *fp = fopen("weights/weights_gen6199.bin", "rb");//64位
     fread(population4test, sizeof(struct Individual), 100, fp);
     fclose(fp);
     weights_test[0] = population4test[0];
 
-    FILE *fp2 = fopen("weights1_2/weights_gen999.bin", "rb");//62位
+    FILE *fp2 = fopen("weights/weights_gen999.bin", "rb");//62位
     fread(population4test, sizeof(struct Individual), 100, fp2);
     fclose(fp2);
     weights_test[1] = population4test[0];
 
-    FILE *fp3 = fopen("weights1_2/weights_gen1999.bin", "rb");
+    FILE *fp3 = fopen("weights/weights_gen1999.bin", "rb");
     fread(population4test, sizeof(struct Individual), 100, fp3);
     fclose(fp3);
     weights_test[2] = population4test[0];
 
-    FILE *fp4 = fopen("weights1_2/weights_gen2999.bin", "rb");
+    FILE *fp4 = fopen("weights/weights_gen2999.bin", "rb");
     fread(population4test, sizeof(struct Individual), 100, fp4);
     fclose(fp4);
     weights_test[3] = population4test[0];
 
-    FILE *fp5 = fopen("weights1_2/weights_gen3999.bin", "rb");
+    FILE *fp5 = fopen("weights/weights_gen3999.bin", "rb");
     fread(population4test, sizeof(struct Individual), 100, fp5);
     fclose(fp5);
     weights_test[4] = population4test[0];
 
-    FILE *fp6 = fopen("weights1_2/weights_gen4999.bin", "rb");
+    FILE *fp6 = fopen("weights/weights_gen4999.bin", "rb");
     fread(population4test, sizeof(struct Individual), 100, fp6);
     fclose(fp6);
     weights_test[5] = population4test[0];
 
-    FILE *fp7 = fopen("weights1_2/weights_gen5999.bin", "rb");
+    FILE *fp7 = fopen("weights/weights_gen5999.bin", "rb");
     fread(population4test, sizeof(struct Individual), 100, fp7);
     fclose(fp7);
     weights_test[6] = population4test[0];
@@ -2905,48 +2905,48 @@ void test_init(){
         weights_test[i].wins = 0;
         weights_test[i].total_stone_diff = 0;
         weights_test[i].fitness = 0;
-        weights_test[i].weights.con_weight = 100;
+        weights_test[i].weights.stable_point = 100;
     }
 
-    weights_test[7].weights.con_weight = 200;
-    weights_test[7].weights.edge_weight = 0.9;
-    weights_test[7].weights.dis_num_weight = 2;
-    weights_test[7].weights.board_weight = 4;
-    weights_test[7].weights.open_weight = 5;
-    weights_test[7].weights.connect_weight = 3;
-    weights_test[7].weights.spread_weight = 10;
-    weights_test[7].weights.dis_sum_weight = 24/200;
-    weights_test[7].weights.legal_dis_weight = 300;
-    weights_test[7].weights.pass_weight = 100;
+    weights_test[7].weights.stable_point = 200;
+    weights_test[7].weights.edge_point = 0.9;
+    weights_test[7].weights.num_legal = 2;
+    weights_test[7].weights.board_score = 4;
+    weights_test[7].weights.open_stones_point = 5;
+    weights_test[7].weights.connect_pairs_point = 3;
+    weights_test[7].weights.spread_point = 10;
+    weights_test[7].weights.sum_point = 24/200;
+    weights_test[7].weights.num_legal2 = 300;
+    weights_test[7].weights.num_pass = 100;
     weights_test[7].weights.alpha_start = 45;
     weights_test[7].weights.alpha_speed = 5;
     weights_test[7].weights.beta_start = 15;
     weights_test[7].weights.beta_speed = 15;
-    weights_test[7].weights.touch_weight=0;
-    weights_test[7].weights.pattern_weight=0;
-    weights_test[7].weights.connect_weight2=0;
-    weights_test[7].weights.cx_point_weight=1;
-    weights_test[7].weights.corner_point_weight=0;
+    weights_test[7].weights.touch_other_point=0;
+    weights_test[7].weights.pattern_point=0;
+    weights_test[7].weights.connect_pairs_point2=0;
+    weights_test[7].weights.cx_legal_point=1;
+    weights_test[7].weights.corner_legal_point=0;
 
-    weights_test[8].weights.con_weight = 100;
-    weights_test[8].weights.edge_weight = 1;
-    weights_test[8].weights.dis_num_weight = 8.19;
-    weights_test[8].weights.board_weight = 5.93;
-    weights_test[8].weights.dis_sum_weight = 10.3;
-    weights_test[8].weights.legal_dis_weight = 5.33;
-    weights_test[8].weights.connect_weight = 8.5;
-    weights_test[8].weights.spread_weight = 10.3;
-    weights_test[8].weights.open_weight = -11.71;
+    weights_test[8].weights.stable_point = 100;
+    weights_test[8].weights.edge_point = 1;
+    weights_test[8].weights.num_legal = 8.19;
+    weights_test[8].weights.board_score = 5.93;
+    weights_test[8].weights.sum_point = 10.3;
+    weights_test[8].weights.num_legal2 = 5.33;
+    weights_test[8].weights.connect_pairs_point = 8.5;
+    weights_test[8].weights.spread_point = 10.3;
+    weights_test[8].weights.open_stones_point = -11.71;
     weights_test[8].weights.alpha_start = 60;
     weights_test[8].weights.alpha_speed = 47.74;
     weights_test[8].weights.beta_start = 31.71;
     weights_test[8].weights.beta_speed = 10.38;
-    weights_test[8].weights.pass_weight = 6.96;
-    weights_test[8].weights.touch_weight = 14.53;
-    weights_test[8].weights.pattern_weight = 0.04;
-    weights_test[8].weights.connect_weight2 = 3.64;
-    weights_test[8].weights.cx_point_weight = -0.28;
-    weights_test[8].weights.corner_point_weight = 14.40; 
+    weights_test[8].weights.num_pass = 6.96;
+    weights_test[8].weights.touch_other_point = 14.53;
+    weights_test[8].weights.pattern_point = 0.04;
+    weights_test[8].weights.connect_pairs_point2 = 3.64;
+    weights_test[8].weights.cx_legal_point = -0.28;
+    weights_test[8].weights.corner_legal_point = 14.40; 
 
 }
 void export_diff_stone(int num, const char *filename,float diff_stone[9][100000]){
@@ -2979,10 +2979,10 @@ void export_topk_to_csv(const struct Individual population[], int generation, in
     if (generation == 0) {
         // ヘッダー
         fprintf(fp, "generation,rank,fitness,wins,games,stone_diff");
-        fprintf(fp, ",con_weight,edge_weight,dis_num_weight,board_weight");
-        fprintf(fp, ",dis_sum_weight,legal_dis_weight,connect_weight,spread_weight");
-        fprintf(fp, ",open_weight,alpha_start,alpha_speed,beta_start,beta_speed,pass_weight");
-        fprintf(fp, ",touch_weight,pattern_weight,connect_weight2,cx_point_weight,corner_point_weight\n");
+        fprintf(fp, ",stable_point,edge_point,num_legal,board_score");
+        fprintf(fp, ",sum_point,num_legal2,connect_pairs_point,spread_point");
+        fprintf(fp, ",open_stones_point,alpha_start,alpha_speed,beta_start,beta_speed,num_pass");
+        fprintf(fp, ",touch_other_point,pattern_point,connect_pairs_point2,cx_legal_point,corner_legal_point\n");
     }
 
     for (int i = 0; i < top_k; i++) {
@@ -2990,17 +2990,17 @@ void export_topk_to_csv(const struct Individual population[], int generation, in
         fprintf(fp, "%d,%d,%.2f,%d,%d,%.2f", generation, i + 1, population[i].fitness,
                 population[i].wins, population[i].games, population[i].total_stone_diff);
 
-        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f", w->con_weight, w->edge_weight, w->dis_num_weight, w->board_weight);
-        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f", w->dis_sum_weight, w->legal_dis_weight, w->connect_weight, w->spread_weight);
-        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", w->open_weight, w->alpha_start, w->alpha_speed, w->beta_start, w->beta_speed, w->pass_weight);
-        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f,%.2f\n", w->touch_weight, w->pattern_weight, w->connect_weight2, w->cx_point_weight, w->corner_point_weight);
+        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f", w->stable_point, w->edge_point, w->num_legal, w->board_score);
+        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f", w->sum_point, w->num_legal2, w->connect_pairs_point, w->spread_point);
+        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", w->open_stones_point, w->alpha_start, w->alpha_speed, w->beta_start, w->beta_speed, w->num_pass);
+        fprintf(fp, ",%.2f,%.2f,%.2f,%.2f,%.2f\n", w->touch_other_point, w->pattern_point, w->connect_pairs_point2, w->cx_legal_point, w->corner_legal_point);
     }
 
     fclose(fp);
 
     if(generation%100==99){
         char bin_filename[256];
-        snprintf(bin_filename, sizeof(bin_filename), "weights1_2/weights_gen%03d.bin", generation);
+        snprintf(bin_filename, sizeof(bin_filename), "weights/weights_gen%03d.bin", generation);
 
         FILE *bin_fp = fopen(bin_filename, "wb");
         if (!bin_fp) {
@@ -3013,7 +3013,7 @@ void export_topk_to_csv(const struct Individual population[], int generation, in
     }
     if(generation%100==99){
         char bin_filename2[256];
-        snprintf(bin_filename2, sizeof(bin_filename2), "opponents1_2/opponent_gen%03d.bin", generation);
+        snprintf(bin_filename2, sizeof(bin_filename2), "opponents/opponent_gen%03d.bin", generation);
 
         FILE *bin_fp = fopen(bin_filename2, "wb");
         if (!bin_fp) {
@@ -3071,46 +3071,46 @@ void progress_game_random(struct Individual individual1,int random_color,int *wi
         float score;
         if(current_color==-1&&random_color==1){
             minimax3(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
-            individual1.weights.con_weight,
-            individual1.weights.edge_weight,
-            individual1.weights.dis_num_weight,
-            individual1.weights.board_weight,
-            individual1.weights.dis_sum_weight,
-            individual1.weights.legal_dis_weight,
-            individual1.weights.connect_weight,
-            individual1.weights.spread_weight,
-            individual1.weights.open_weight,
+            individual1.weights.stable_point,
+            individual1.weights.edge_point,
+            individual1.weights.num_legal,
+            individual1.weights.board_score,
+            individual1.weights.sum_point,
+            individual1.weights.num_legal2,
+            individual1.weights.connect_pairs_point,
+            individual1.weights.spread_point,
+            individual1.weights.open_stones_point,
             individual1.weights.alpha_start,
             individual1.weights.alpha_speed,
             individual1.weights.beta_start,
             individual1.weights.beta_speed,
-            individual1.weights.pass_weight,
-            individual1.weights.touch_weight,
-            individual1.weights.pattern_weight,
-            individual1.weights.connect_weight2,
-            individual1.weights.cx_point_weight,
-            individual1.weights.corner_point_weight);
+            individual1.weights.num_pass,
+            individual1.weights.touch_other_point,
+            individual1.weights.pattern_point,
+            individual1.weights.connect_pairs_point2,
+            individual1.weights.cx_legal_point,
+            individual1.weights.corner_legal_point);
         }else if(current_color==1&&random_color==-1){
             minimax3(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
-            individual1.weights.con_weight,
-            individual1.weights.edge_weight,
-            individual1.weights.dis_num_weight,
-            individual1.weights.board_weight,
-            individual1.weights.dis_sum_weight,
-            individual1.weights.legal_dis_weight,
-            individual1.weights.connect_weight,
-            individual1.weights.spread_weight,
-            individual1.weights.open_weight,
+            individual1.weights.stable_point,
+            individual1.weights.edge_point,
+            individual1.weights.num_legal,
+            individual1.weights.board_score,
+            individual1.weights.sum_point,
+            individual1.weights.num_legal2,
+            individual1.weights.connect_pairs_point,
+            individual1.weights.spread_point,
+            individual1.weights.open_stones_point,
             individual1.weights.alpha_start,
             individual1.weights.alpha_speed,
             individual1.weights.beta_start,
             individual1.weights.beta_speed,
-            individual1.weights.pass_weight,
-            individual1.weights.touch_weight,
-            individual1.weights.pattern_weight,
-            individual1.weights.connect_weight2,
-            individual1.weights.cx_point_weight,
-            individual1.weights.corner_point_weight);
+            individual1.weights.num_pass,
+            individual1.weights.touch_other_point,
+            individual1.weights.pattern_point,
+            individual1.weights.connect_pairs_point2,
+            individual1.weights.cx_legal_point,
+            individual1.weights.corner_legal_point);
         }else{
             act = legal_list[(int)rand_float2(0, legal_list_size)];
         }
@@ -3183,109 +3183,109 @@ void GA_init(){
     FILE *fp = fopen("opponents2/opponent_gen1699.bin", "rb");
     fread(opponent, sizeof(struct Individual), 20, fp);
     fclose(fp); */
-    /* opponent[0].weights.con_weight=14.36;
-    opponent[0].weights.edge_weight=0.25;
-    opponent[0].weights.dis_num_weight=18.78;
-    opponent[0].weights.board_weight=4.67;
-    opponent[0].weights.dis_sum_weight=4.02;
-    opponent[0].weights.legal_dis_weight=14.48;
-    opponent[0].weights.connect_weight=4.06;
-    opponent[0].weights.spread_weight=7.82;
-    opponent[0].weights.open_weight=15.06;
+    /* opponent[0].weights.stable_point=14.36;
+    opponent[0].weights.edge_point=0.25;
+    opponent[0].weights.num_legal=18.78;
+    opponent[0].weights.board_score=4.67;
+    opponent[0].weights.sum_point=4.02;
+    opponent[0].weights.num_legal2=14.48;
+    opponent[0].weights.connect_pairs_point=4.06;
+    opponent[0].weights.spread_point=7.82;
+    opponent[0].weights.open_stones_point=15.06;
     opponent[0].weights.alpha_start=34.74;
     opponent[0].weights.alpha_speed=18.92;
     opponent[0].weights.beta_start=11.10;
     opponent[0].weights.beta_speed=28.19;
-    opponent[0].weights.pass_weight=14.45;
-    opponent[0].weights.touch_weight=0;
-    opponent[0].weights.pattern_weight=0;
-    opponent[0].weights.connect_weight2=0;
-    opponent[0].weights.cx_point_weight=1;
-    opponent[0].weights.corner_point_weight=0; */
+    opponent[0].weights.num_pass=14.45;
+    opponent[0].weights.touch_other_point=0;
+    opponent[0].weights.pattern_point=0;
+    opponent[0].weights.connect_pairs_point2=0;
+    opponent[0].weights.cx_legal_point=1;
+    opponent[0].weights.corner_legal_point=0; */
 
-    opponent[18].weights.con_weight = 200;
-    opponent[18].weights.edge_weight = 0.9;
-    opponent[18].weights.dis_num_weight = 2;
-    opponent[18].weights.board_weight = 4;
-    opponent[18].weights.open_weight = 5;
-    opponent[18].weights.connect_weight = 3;
-    opponent[18].weights.spread_weight = 10;
-    opponent[18].weights.dis_sum_weight = 24;
-    opponent[18].weights.legal_dis_weight = 300;
-    opponent[18].weights.pass_weight = 100;
+    opponent[18].weights.stable_point = 200;
+    opponent[18].weights.edge_point = 0.9;
+    opponent[18].weights.num_legal = 2;
+    opponent[18].weights.board_score = 4;
+    opponent[18].weights.open_stones_point = 5;
+    opponent[18].weights.connect_pairs_point = 3;
+    opponent[18].weights.spread_point = 10;
+    opponent[18].weights.sum_point = 24;
+    opponent[18].weights.num_legal2 = 300;
+    opponent[18].weights.num_pass = 100;
     opponent[18].weights.alpha_start = 45;
     opponent[18].weights.alpha_speed = 5;
     opponent[18].weights.beta_start = 15;
     opponent[18].weights.beta_speed = 15;
-    opponent[18].weights.touch_weight=0;
-    opponent[18].weights.pattern_weight=0;
-    opponent[18].weights.connect_weight2=0;
-    opponent[18].weights.cx_point_weight=1;
-    opponent[18].weights.corner_point_weight=0;
+    opponent[18].weights.touch_other_point=0;
+    opponent[18].weights.pattern_point=0;
+    opponent[18].weights.connect_pairs_point2=0;
+    opponent[18].weights.cx_legal_point=1;
+    opponent[18].weights.corner_legal_point=0;
 
-    opponent[19].weights.con_weight = 100;
-    opponent[19].weights.edge_weight = 1;
-    opponent[19].weights.dis_num_weight = 8.19;
-    opponent[19].weights.board_weight = 5.93;
-    opponent[19].weights.dis_sum_weight = 10.3;
-    opponent[19].weights.legal_dis_weight = 5.33;
-    opponent[19].weights.connect_weight = 8.5;
-    opponent[19].weights.spread_weight = 10.3;
-    opponent[19].weights.open_weight = -11.71;
+    opponent[19].weights.stable_point = 100;
+    opponent[19].weights.edge_point = 1;
+    opponent[19].weights.num_legal = 8.19;
+    opponent[19].weights.board_score = 5.93;
+    opponent[19].weights.sum_point = 10.3;
+    opponent[19].weights.num_legal2 = 5.33;
+    opponent[19].weights.connect_pairs_point = 8.5;
+    opponent[19].weights.spread_point = 10.3;
+    opponent[19].weights.open_stones_point = -11.71;
     opponent[19].weights.alpha_start = 60;
     opponent[19].weights.alpha_speed = 47.74;
     opponent[19].weights.beta_start = 31.71;
     opponent[19].weights.beta_speed = 10.38;
-    opponent[19].weights.pass_weight = 6.96;
-    opponent[19].weights.touch_weight = 14.53;
-    opponent[19].weights.pattern_weight = 0.04;
-    opponent[19].weights.connect_weight2 = 3.64;
-    opponent[19].weights.cx_point_weight = -0.28;
-    opponent[19].weights.corner_point_weight = 14.40;
+    opponent[19].weights.num_pass = 6.96;
+    opponent[19].weights.touch_other_point = 14.53;
+    opponent[19].weights.pattern_point = 0.04;
+    opponent[19].weights.connect_pairs_point2 = 3.64;
+    opponent[19].weights.cx_legal_point = -0.28;
+    opponent[19].weights.corner_legal_point = 14.40;
 
     for(int i=0;i<18;i++){
-        opponent[i].weights.con_weight = 100;
-        opponent[i].weights.edge_weight = rand_float(-10, 10);
-        opponent[i].weights.dis_num_weight = rand_float(-10, 10);
-        opponent[i].weights.board_weight = rand_float(-10, 10);
-        opponent[i].weights.dis_sum_weight = rand_float(-10, 10);
-        opponent[i].weights.legal_dis_weight = rand_float(-10, 10);
-        opponent[i].weights.connect_weight = rand_float(-10, 10);
-        opponent[i].weights.spread_weight = rand_float(-10, 10);
-        opponent[i].weights.open_weight = rand_float(-10, 10);
+        opponent[i].weights.stable_point = 100;
+        opponent[i].weights.edge_point = rand_float(-10, 10);
+        opponent[i].weights.num_legal = rand_float(-10, 10);
+        opponent[i].weights.board_score = rand_float(-10, 10);
+        opponent[i].weights.sum_point = rand_float(-10, 10);
+        opponent[i].weights.num_legal2 = rand_float(-10, 10);
+        opponent[i].weights.connect_pairs_point = rand_float(-10, 10);
+        opponent[i].weights.spread_point = rand_float(-10, 10);
+        opponent[i].weights.open_stones_point = rand_float(-10, 10);
         opponent[i].weights.alpha_start = rand_float(1, 60);
         opponent[i].weights.alpha_speed = rand_float(1, 60);
         opponent[i].weights.beta_start = rand_float(1, 60);
         opponent[i].weights.beta_speed = rand_float(1, 60);
-        opponent[i].weights.pass_weight = rand_float(-10, 10);
-        opponent[i].weights.touch_weight=rand_float(-10, 10);
-        opponent[i].weights.pattern_weight=rand_float(-10, 10);
-        opponent[i].weights.connect_weight2=rand_float(-10, 10);
-        opponent[i].weights.cx_point_weight=rand_float(-10, 10);
-        opponent[i].weights.corner_point_weight=rand_float(-10, 10);
-        //printf("%2.f",opponent[i].weights.edge_weight);
+        opponent[i].weights.num_pass = rand_float(-10, 10);
+        opponent[i].weights.touch_other_point=rand_float(-10, 10);
+        opponent[i].weights.pattern_point=rand_float(-10, 10);
+        opponent[i].weights.connect_pairs_point2=rand_float(-10, 10);
+        opponent[i].weights.cx_legal_point=rand_float(-10, 10);
+        opponent[i].weights.corner_legal_point=rand_float(-10, 10);
+        //printf("%2.f",opponent[i].weights.edge_point);
     }
     
 
-    /* opponent[0].weights.con_weight = 33;
-    opponent[0].weights.edge_weight = 1.18;
-    opponent[0].weights.dis_num_weight = 8.22;
-    opponent[0].weights.board_weight = 12.73;
-    opponent[0].weights.open_weight = 7.13;
-    opponent[0].weights.connect_weight = 7.96;
-    opponent[0].weights.spread_weight = 4.91;
-    opponent[0].weights.dis_sum_weight = 8.70;
-    opponent[0].weights.legal_dis_weight = 4.77;
-    opponent[0].weights.pass_weight = 34.62;
+    /* opponent[0].weights.stable_point = 33;
+    opponent[0].weights.edge_point = 1.18;
+    opponent[0].weights.num_legal = 8.22;
+    opponent[0].weights.board_score = 12.73;
+    opponent[0].weights.open_stones_point = 7.13;
+    opponent[0].weights.connect_pairs_point = 7.96;
+    opponent[0].weights.spread_point = 4.91;
+    opponent[0].weights.sum_point = 8.70;
+    opponent[0].weights.num_legal2 = 4.77;
+    opponent[0].weights.num_pass = 34.62;
     opponent[0].weights.alpha_start = 46.29;
     opponent[0].weights.alpha_speed = 25.55;
     opponent[0].weights.beta_start = 29.01;
     opponent[0].weights.beta_speed = 2.22;
-    opponent[0].weights.touch_weight=2.44;
-    opponent[0].weights.pattern_weight=0.30;
-    opponent[0].weights.connect_weight2=3.46;
-    opponent[0].weights.cx_point_weight=2.47;
-    opponent[0].weights.corner_point_weight=3.43; */
+    opponent[0].weights.touch_other_point=2.44;
+    opponent[0].weights.pattern_point=0.30;
+    opponent[0].weights.connect_pairs_point2=3.46;
+    opponent[0].weights.cx_legal_point=2.47;
+    opponent[0].weights.corner_legal_point=3.43; */
 
     
     /* FILE *fp2 = fopen("weights2/weights_gen1699.bin", "rb");
@@ -3298,144 +3298,144 @@ void GA_init(){
         population[i].wins = 0;
         population[i].total_stone_diff = 0;
         population[i].fitness = 0;
-        population[i].weights.con_weight = 100;
-        population[i].weights.edge_weight = rand_float(-10, 10);
-        population[i].weights.dis_num_weight = rand_float(-10, 10);
-        population[i].weights.board_weight = rand_float(-10, 10);
-        population[i].weights.dis_sum_weight = rand_float(-10, 10);
-        population[i].weights.legal_dis_weight = rand_float(-10, 10);
-        population[i].weights.connect_weight = rand_float(-10, 10);
-        population[i].weights.spread_weight = rand_float(-10, 10);
-        population[i].weights.open_weight = rand_float(-10, 10);
+        population[i].weights.stable_point = 100;
+        population[i].weights.edge_point = rand_float(-10, 10);
+        population[i].weights.num_legal = rand_float(-10, 10);
+        population[i].weights.board_score = rand_float(-10, 10);
+        population[i].weights.sum_point = rand_float(-10, 10);
+        population[i].weights.num_legal2 = rand_float(-10, 10);
+        population[i].weights.connect_pairs_point = rand_float(-10, 10);
+        population[i].weights.spread_point = rand_float(-10, 10);
+        population[i].weights.open_stones_point = rand_float(-10, 10);
         population[i].weights.alpha_start = rand_float(1, 60);
         population[i].weights.alpha_speed = rand_float(1, 60);
         population[i].weights.beta_start = rand_float(1, 60);
         population[i].weights.beta_speed = rand_float(1, 60);
-        population[i].weights.pass_weight = rand_float(-10, 10);
-        population[i].weights.touch_weight=rand_float(-10, 10);
-        population[i].weights.pattern_weight=rand_float(-10, 10);
-        population[i].weights.connect_weight2=rand_float(-10, 10);
-        population[i].weights.cx_point_weight=rand_float(-10, 10);
-        population[i].weights.corner_point_weight=rand_float(-10, 10);
+        population[i].weights.num_pass = rand_float(-10, 10);
+        population[i].weights.touch_other_point=rand_float(-10, 10);
+        population[i].weights.pattern_point=rand_float(-10, 10);
+        population[i].weights.connect_pairs_point2=rand_float(-10, 10);
+        population[i].weights.cx_legal_point=rand_float(-10, 10);
+        population[i].weights.corner_legal_point=rand_float(-10, 10);
         /* if(0<i){
-            population[i].weights.con_weight = 100;
-            population[i].weights.edge_weight = rand_float(-10, 100);
-            population[i].weights.dis_num_weight = rand_float(-10, 100);
-            population[i].weights.board_weight = rand_float(-10, 100);
-            population[i].weights.dis_sum_weight = rand_float(-10, 100);
-            population[i].weights.legal_dis_weight = rand_float(-10, 100);
-            population[i].weights.connect_weight = rand_float(-10, 100);
-            population[i].weights.spread_weight = rand_float(-10, 100);
-            population[i].weights.open_weight = rand_float(-10, 100);
+            population[i].weights.stable_point = 100;
+            population[i].weights.edge_point = rand_float(-10, 100);
+            population[i].weights.num_legal = rand_float(-10, 100);
+            population[i].weights.board_score = rand_float(-10, 100);
+            population[i].weights.sum_point = rand_float(-10, 100);
+            population[i].weights.num_legal2 = rand_float(-10, 100);
+            population[i].weights.connect_pairs_point = rand_float(-10, 100);
+            population[i].weights.spread_point = rand_float(-10, 100);
+            population[i].weights.open_stones_point = rand_float(-10, 100);
             population[i].weights.alpha_start = rand_float(1, 60);
             population[i].weights.alpha_speed = rand_float(1, 60);
             population[i].weights.beta_start = rand_float(1, 60);
             population[i].weights.beta_speed = rand_float(1, 60);
-            population[i].weights.pass_weight = rand_float(-10, 100);
-            population[i].weights.touch_weight=rand_float(-10, 100);
-            population[i].weights.pattern_weight=rand_float(-10, 10);
-            population[i].weights.connect_weight2=rand_float(-10, 10);
-            population[i].weights.cx_point_weight=rand_float(-10, 10);
-            population[i].weights.corner_point_weight=rand_float(-10, 100);
+            population[i].weights.num_pass = rand_float(-10, 100);
+            population[i].weights.touch_other_point=rand_float(-10, 100);
+            population[i].weights.pattern_point=rand_float(-10, 10);
+            population[i].weights.connect_pairs_point2=rand_float(-10, 10);
+            population[i].weights.cx_legal_point=rand_float(-10, 10);
+            population[i].weights.corner_legal_point=rand_float(-10, 100);
         } */
         /* if(i==0){
             population[i].games = 0;
             population[i].wins = 0;
             population[i].total_stone_diff = 0;
             population[i].fitness = 0;
-            population[i].weights.con_weight=14.36;
-            population[i].weights.edge_weight=0.25;
-            population[i].weights.dis_num_weight=18.78;
-            population[i].weights.board_weight=4.67;
-            population[i].weights.dis_sum_weight=4.02;
-            population[i].weights.legal_dis_weight=14.48;
-            population[i].weights.connect_weight=4.06;
-            population[i].weights.spread_weight=7.82;
-            population[i].weights.open_weight=15.06;
+            population[i].weights.stable_point=14.36;
+            population[i].weights.edge_point=0.25;
+            population[i].weights.num_legal=18.78;
+            population[i].weights.board_score=4.67;
+            population[i].weights.sum_point=4.02;
+            population[i].weights.num_legal2=14.48;
+            population[i].weights.connect_pairs_point=4.06;
+            population[i].weights.spread_point=7.82;
+            population[i].weights.open_stones_point=15.06;
             population[i].weights.alpha_start=34.74;
             population[i].weights.alpha_speed=18.92;
             population[i].weights.beta_start=11.10;
             population[i].weights.beta_speed=28.19;
-            population[i].weights.pass_weight=14.45;
-            population[i].weights.touch_weight=0;
-            population[i].weights.pattern_weight=0;
-            population[i].weights.connect_weight2=0;
-            population[i].weights.cx_point_weight=1;
-            population[i].weights.corner_point_weight=0;
+            population[i].weights.num_pass=14.45;
+            population[i].weights.touch_other_point=0;
+            population[i].weights.pattern_point=0;
+            population[i].weights.connect_pairs_point2=0;
+            population[i].weights.cx_legal_point=1;
+            population[i].weights.corner_legal_point=0;
         }else if(i==1){
-            population[i].weights.con_weight = 33;
-            population[i].weights.edge_weight = 1.18;
-            population[i].weights.dis_num_weight = 8.22;
-            population[i].weights.board_weight = 12.73;
-            population[i].weights.open_weight = 7.13;
-            population[i].weights.connect_weight = 7.96;
-            population[i].weights.spread_weight = 4.91;
-            population[i].weights.dis_sum_weight = 8.70;
-            population[i].weights.legal_dis_weight = 4.77;
-            population[i].weights.pass_weight = 34.62;
+            population[i].weights.stable_point = 33;
+            population[i].weights.edge_point = 1.18;
+            population[i].weights.num_legal = 8.22;
+            population[i].weights.board_score = 12.73;
+            population[i].weights.open_stones_point = 7.13;
+            population[i].weights.connect_pairs_point = 7.96;
+            population[i].weights.spread_point = 4.91;
+            population[i].weights.sum_point = 8.70;
+            population[i].weights.num_legal2 = 4.77;
+            population[i].weights.num_pass = 34.62;
             population[i].weights.alpha_start = 46.29;
             population[i].weights.alpha_speed = 25.55;
             population[i].weights.beta_start = 29.01;
             population[i].weights.beta_speed = 2.22;
-            population[i].weights.touch_weight=2.44;
-            population[i].weights.pattern_weight=0.30;
-            population[i].weights.connect_weight2=3.46;
-            population[i].weights.cx_point_weight=2.47;
-            population[i].weights.corner_point_weight=3.43;
+            population[i].weights.touch_other_point=2.44;
+            population[i].weights.pattern_point=0.30;
+            population[i].weights.connect_pairs_point2=3.46;
+            population[i].weights.cx_legal_point=2.47;
+            population[i].weights.corner_legal_point=3.43;
         }else{
             population[i].games = 0;
             population[i].wins = 0;
             population[i].total_stone_diff = 0;
             population[i].fitness = 0;
-            population[i].weights.con_weight = 100;
-            population[i].weights.edge_weight = rand_float(-10, 10);
-            population[i].weights.dis_num_weight = rand_float(-10, 10);
-            population[i].weights.board_weight = rand_float(-10, 10);
-            population[i].weights.dis_sum_weight = rand_float(-10, 10);
-            population[i].weights.legal_dis_weight = rand_float(-10, 10);
-            population[i].weights.connect_weight = rand_float(-10, 10);
-            population[i].weights.spread_weight = rand_float(-10, 10);
-            population[i].weights.open_weight = rand_float(-10, 10);
+            population[i].weights.stable_point = 100;
+            population[i].weights.edge_point = rand_float(-10, 10);
+            population[i].weights.num_legal = rand_float(-10, 10);
+            population[i].weights.board_score = rand_float(-10, 10);
+            population[i].weights.sum_point = rand_float(-10, 10);
+            population[i].weights.num_legal2 = rand_float(-10, 10);
+            population[i].weights.connect_pairs_point = rand_float(-10, 10);
+            population[i].weights.spread_point = rand_float(-10, 10);
+            population[i].weights.open_stones_point = rand_float(-10, 10);
             population[i].weights.alpha_start = rand_float(1, 60);
             population[i].weights.alpha_speed = rand_float(1, 60);
             population[i].weights.beta_start = rand_float(1, 60);
             population[i].weights.beta_speed = rand_float(1, 60);
-            population[i].weights.pass_weight = rand_float(-10, 10);
-            population[i].weights.touch_weight=rand_float(-10, 10);
-            population[i].weights.pattern_weight=rand_float(-10, 10);
-            population[i].weights.connect_weight2=rand_float(-10, 10);
-            population[i].weights.cx_point_weight=rand_float(-10, 10);
-            population[i].weights.corner_point_weight=rand_float(-10, 10);
+            population[i].weights.num_pass = rand_float(-10, 10);
+            population[i].weights.touch_other_point=rand_float(-10, 10);
+            population[i].weights.pattern_point=rand_float(-10, 10);
+            population[i].weights.connect_pairs_point2=rand_float(-10, 10);
+            population[i].weights.cx_legal_point=rand_float(-10, 10);
+            population[i].weights.corner_legal_point=rand_float(-10, 10);
         } */
         
     }
-    population[99].weights.con_weight = 100;
-    population[99].weights.edge_weight = 1;
-    population[99].weights.dis_num_weight = 8.19;
-    population[99].weights.board_weight = 5.93;
-    population[99].weights.dis_sum_weight = 10.3;
-    population[99].weights.legal_dis_weight = 5.33;
-    population[99].weights.connect_weight = 8.5;
-    population[99].weights.spread_weight = 10.3;
-    population[99].weights.open_weight = -11.71;
+    population[99].weights.stable_point = 100;
+    population[99].weights.edge_point = 1;
+    population[99].weights.num_legal = 8.19;
+    population[99].weights.board_score = 5.93;
+    population[99].weights.sum_point = 10.3;
+    population[99].weights.num_legal2 = 5.33;
+    population[99].weights.connect_pairs_point = 8.5;
+    population[99].weights.spread_point = 10.3;
+    population[99].weights.open_stones_point = -11.71;
     population[99].weights.alpha_start = 60;
     population[99].weights.alpha_speed = 47.74;
     population[99].weights.beta_start = 31.71;
     population[99].weights.beta_speed = 10.38;
-    population[99].weights.pass_weight = 6.96;
-    population[99].weights.touch_weight = 14.53;
-    population[99].weights.pattern_weight = 0.04;
-    population[99].weights.connect_weight2 = 3.64;
-    population[99].weights.cx_point_weight = -0.28;
-    population[99].weights.corner_point_weight = 14.40;
+    population[99].weights.num_pass = 6.96;
+    population[99].weights.touch_other_point = 14.53;
+    population[99].weights.pattern_point = 0.04;
+    population[99].weights.connect_pairs_point2 = 3.64;
+    population[99].weights.cx_legal_point = -0.28;
+    population[99].weights.corner_legal_point = 14.40;
 }
 
 
 void progress_game(struct Individual individual1,struct Individual individual2,int *winner,float *diff_stone){//1が先手(黒)
-    printf("\n,%.2f,%.2f,%.2f,%.2f", individual1.weights.con_weight, individual1.weights.edge_weight, individual1.weights.dis_num_weight, individual1.weights.board_weight);
-    printf(",%.2f,%.2f,%.2f,%.2f", individual1.weights.dis_sum_weight, individual1.weights.legal_dis_weight, individual1.weights.connect_weight, individual1.weights.spread_weight);
-    printf(",%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", individual1.weights.open_weight, individual1.weights.alpha_start, individual1.weights.alpha_speed, individual1.weights.beta_start, individual1.weights.beta_speed, individual1.weights.pass_weight);
-    printf(",%.2f,%.2f,%.2f,%.2f,%.2f\n", individual1.weights.touch_weight, individual1.weights.pattern_weight, individual1.weights.connect_weight2, individual1.weights.cx_point_weight, individual1.weights.corner_point_weight);
+    printf("\n,%.2f,%.2f,%.2f,%.2f", individual1.weights.stable_point, individual1.weights.edge_point, individual1.weights.num_legal, individual1.weights.board_score);
+    printf(",%.2f,%.2f,%.2f,%.2f", individual1.weights.sum_point, individual1.weights.num_legal2, individual1.weights.connect_pairs_point, individual1.weights.spread_point);
+    printf(",%.2f,%.2f,%.2f,%.2f,%.2f,%.2f", individual1.weights.open_stones_point, individual1.weights.alpha_start, individual1.weights.alpha_speed, individual1.weights.beta_start, individual1.weights.beta_speed, individual1.weights.num_pass);
+    printf(",%.2f,%.2f,%.2f,%.2f,%.2f\n", individual1.weights.touch_other_point, individual1.weights.pattern_point, individual1.weights.connect_pairs_point2, individual1.weights.cx_legal_point, individual1.weights.corner_legal_point);
     uint64_t current_w = first_board_w;
     uint64_t current_b = first_board_b;
     int current_color = -1;
@@ -3468,46 +3468,46 @@ void progress_game(struct Individual individual1,struct Individual individual2,i
         float score;
         if(current_color==-1){
             minimax3(current_b,current_w,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
-            individual1.weights.con_weight,
-            individual1.weights.edge_weight,
-            individual1.weights.dis_num_weight,
-            individual1.weights.board_weight,
-            individual1.weights.dis_sum_weight,
-            individual1.weights.legal_dis_weight,
-            individual1.weights.connect_weight,
-            individual1.weights.spread_weight,
-            individual1.weights.open_weight,
+            individual1.weights.stable_point,
+            individual1.weights.edge_point,
+            individual1.weights.num_legal,
+            individual1.weights.board_score,
+            individual1.weights.sum_point,
+            individual1.weights.num_legal2,
+            individual1.weights.connect_pairs_point,
+            individual1.weights.spread_point,
+            individual1.weights.open_stones_point,
             individual1.weights.alpha_start,
             individual1.weights.alpha_speed,
             individual1.weights.beta_start,
             individual1.weights.beta_speed,
-            individual1.weights.pass_weight,
-            individual1.weights.touch_weight,
-            individual1.weights.pattern_weight,
-            individual1.weights.connect_weight2,
-            individual1.weights.cx_point_weight,
-            individual1.weights.corner_point_weight);
+            individual1.weights.num_pass,
+            individual1.weights.touch_other_point,
+            individual1.weights.pattern_point,
+            individual1.weights.connect_pairs_point2,
+            individual1.weights.cx_legal_point,
+            individual1.weights.corner_legal_point);
         }else{
             minimax3(current_w,current_b,2,-INFINITY,INFINITY,TRUE,0,0,&act,&score,
-            individual2.weights.con_weight,
-            individual2.weights.edge_weight,
-            individual2.weights.dis_num_weight,
-            individual2.weights.board_weight,
-            individual2.weights.dis_sum_weight,
-            individual2.weights.legal_dis_weight,
-            individual2.weights.connect_weight,
-            individual2.weights.spread_weight,
-            individual2.weights.open_weight,
+            individual2.weights.stable_point,
+            individual2.weights.edge_point,
+            individual2.weights.num_legal,
+            individual2.weights.board_score,
+            individual2.weights.sum_point,
+            individual2.weights.num_legal2,
+            individual2.weights.connect_pairs_point,
+            individual2.weights.spread_point,
+            individual2.weights.open_stones_point,
             individual2.weights.alpha_start,
             individual2.weights.alpha_speed,
             individual2.weights.beta_start,
             individual2.weights.beta_speed,
-            individual2.weights.pass_weight,
-            individual2.weights.touch_weight,
-            individual2.weights.pattern_weight,
-            individual2.weights.connect_weight2,
-            individual2.weights.cx_point_weight,
-            individual2.weights.corner_point_weight);
+            individual2.weights.num_pass,
+            individual2.weights.touch_other_point,
+            individual2.weights.pattern_point,
+            individual2.weights.connect_pairs_point2,
+            individual2.weights.cx_legal_point,
+            individual2.weights.corner_legal_point);
         }
         RowCol flip_list[64];
         int flip_list_size;
@@ -3629,25 +3629,25 @@ void generate_next_generation(struct Individual population[]) {
         new_population[i].wins = 0;
         new_population[i].total_stone_diff = 0;
         new_population[i].fitness = 0;
-        new_population[i].weights.con_weight = 100;
-        new_population[i].weights.edge_weight = rand_float(-10, 10);
-        new_population[i].weights.dis_num_weight = rand_float(-10, 10);
-        new_population[i].weights.board_weight = rand_float(-10, 10);
-        new_population[i].weights.dis_sum_weight = rand_float(-10, 10);
-        new_population[i].weights.legal_dis_weight = rand_float(-10, 10);
-        new_population[i].weights.connect_weight = rand_float(-10, 10);
-        new_population[i].weights.spread_weight = rand_float(-10, 10);
-        new_population[i].weights.open_weight = rand_float(-10, 10);
+        new_population[i].weights.stable_point = 100;
+        new_population[i].weights.edge_point = rand_float(-10, 10);
+        new_population[i].weights.num_legal = rand_float(-10, 10);
+        new_population[i].weights.board_score = rand_float(-10, 10);
+        new_population[i].weights.sum_point = rand_float(-10, 10);
+        new_population[i].weights.num_legal2 = rand_float(-10, 10);
+        new_population[i].weights.connect_pairs_point = rand_float(-10, 10);
+        new_population[i].weights.spread_point = rand_float(-10, 10);
+        new_population[i].weights.open_stones_point = rand_float(-10, 10);
         new_population[i].weights.alpha_start = rand_float(1, 60);
         new_population[i].weights.alpha_speed = rand_float(1, 60);
         new_population[i].weights.beta_start = rand_float(1, 60);
         new_population[i].weights.beta_speed = rand_float(1, 60);
-        new_population[i].weights.pass_weight = rand_float(-10, 10);
-        new_population[i].weights.touch_weight=rand_float(-10, 10);
-        new_population[i].weights.pattern_weight=rand_float(-10, 10);
-        new_population[i].weights.connect_weight2=rand_float(-10, 10);
-        new_population[i].weights.cx_point_weight=rand_float(-10, 10);
-        new_population[i].weights.corner_point_weight=rand_float(-10, 10);
+        new_population[i].weights.num_pass = rand_float(-10, 10);
+        new_population[i].weights.touch_other_point=rand_float(-10, 10);
+        new_population[i].weights.pattern_point=rand_float(-10, 10);
+        new_population[i].weights.connect_pairs_point2=rand_float(-10, 10);
+        new_population[i].weights.cx_legal_point=rand_float(-10, 10);
+        new_population[i].weights.corner_legal_point=rand_float(-10, 10);
     }
     // 残りは交叉＋突然変異で生成
     for (int i = TOP_K*2+NEW_RANDOM_INDIVIDUALS; i < POP_SIZE; i++) {
@@ -3658,7 +3658,7 @@ void generate_next_generation(struct Individual population[]) {
         struct Weights child_weights = crossover(tournament_selection(population,3).weights,
                                                 tournament_selection(population,3).weights);
         mutate(&child_weights, MUTATION_RATE, MUTATION_STRENGTH);
-        new_population[i].weights.con_weight = 100;
+        new_population[i].weights.stable_point = 100;
         new_population[i].weights = child_weights;
         new_population[i].wins = 0;
         new_population[i].games = 0;
@@ -3767,49 +3767,7 @@ void GA_main() {
 
 
 int main(void){
-    //omp_set_num_threads(12);
-    //printf("LEFT_MASK = %llu\n", LEFT_MASK&RIGHT_MASK);
-    RowCol legal_list[64];
-    int legal_list_size;
-    //get_legal_square("black",68853694464,34628173824,legal_list,&legal_list_size);
-    white = 68853694464ULL;
-    black = 34628173824ULL;
-    RowCol flip_list[64];
-    int flip_list_size;
-
-
-    
-    //identify_flip_stone("black",&white,&black,"d3",1,legal_list,&flip_list_size);
-    //printf("\n%llu\n%llu",white,black);
-    //printf(legal_list);
-    /* printf("\n");
-    for (int i = 0; i < legal_list_size; i++) {
-        printf("Legal Move: Row = %d, Col = %d\n", legal_list[i].row, legal_list[i].col);
-    } */
-    /* for (int i = 0; i < flip_list_size; i++) {
-        printf("\nFlip Stone: Row = %d, Col = %d\n", legal_list[i].row, legal_list[i].col);
-    } */
-    white = 68761356292ULL;
-    black = 34829500416ULL;
-    white = 8952118241016364412ULL;
-    black = 193113006800896ULL;
-
-    printf("\n%f",evaluate_board(white,black,0,0));
-    uint64_t c_w=0,c_b=0;
-    get_confirmed_stones(white,black,&c_w,&c_b);
-    printf("\n%llu,%llu",c_w,c_b);
-
-    RowCol act;
-    float score;
-    minimax(white,black,3,-INFINITY,INFINITY,TRUE,0,0,&act,&score);
-    printf("\nfinal act:(%d,%d),score:%f",act.row,act.col,score);
-    printf("\nscore:%f",evaluate_board5(white,black,0,0));
-    printf("\nscore:%f",position_point(white));
-    
-    printf("\nw:%f",calc_spread_penalty(white));
-    printf("\nb:%f",calc_spread_penalty(black));
-    //GA_main();
-    //GA_init();
+    GA_main();
     test_main();
     return 0;
 }
