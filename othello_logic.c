@@ -997,296 +997,27 @@ float position_point(uint64_t board){
     }
     return score;
 }
-float evaluate_board5(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass){
-    
-    uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
-    int turn = 60 - bit_count(empty);
-    float alpha = nmin(nmax(0,(turn -40) / 10),1);
-    float beta = nmin(nmax(0,(turn -25) / 15),1);
-    int stable_point=100;
-    
-    float spread_score = 0,open_stones_score = 0,connected_pairs_score = 0;
-    float b_snum = bit_count(board_b);
-    float w_snum = bit_count(board_w);
-    float connect_w_num,connect_b_num,open_w_num,open_b_num,touch_w2b,touch_b2w,touch_other;
-    find_connected_open_stone2(board_w,board_b,empty,&connect_w_num,&open_w_num,&touch_w2b);
-    find_connected_open_stone2(board_b,board_w,empty,&connect_b_num,&open_b_num,&touch_b2w);
-    float spread_w = calc_spread_penalty(board_w);
-    float spread_b = calc_spread_penalty(board_b);
-    float open_stones_w_num = open_w_num/(w_snum+0.1);
-    float open_stones_b_num = open_b_num/(b_snum+0.1);
-    if(beta!=1){
-        
-
-        
-        
-
-        
-
-        
-
-        
-
-        
-
-        
-        open_stones_score = -open_stones_w_num + open_stones_b_num;
-        spread_score = -spread_w + spread_b;
-    }
-    touch_other = touch_w2b/(w_snum+0.1) - touch_b2w/(b_snum+0.1);
-    float connected_pairs_w_num = connect_w_num/(w_snum+0.1);
-    float connected_pairs_b_num = connect_b_num/(b_snum+0.1);
-    printf("\nopen_w:%f\nspread_w:%f\ntouch_w2b:%f\nconnect_w:%f",open_stones_w_num,spread_w,touch_w2b/(w_snum+0.1),connected_pairs_w_num);
-    connected_pairs_score = connected_pairs_w_num - connected_pairs_b_num;
-    RowCol legal_list_w[64];
-    //RowCol *legal_list_w = malloc(sizeof(RowCol) * 64);
-    //RowCol *legal_list_b = malloc(sizeof(RowCol) * 64);
-    int legal_list_size_w=0;
-    get_legal_square("white",board_w,board_b,legal_list_w,&legal_list_size_w);
-    //printf("\nwhite_legal_finish");
-    RowCol legal_list_b[64];
-    int legal_list_size_b=0;
-    //printf("\nblack_legal_start");
-    get_legal_square("black",board_w,board_b,legal_list_b,&legal_list_size_b);
-    //printf("\nlegal_list_size_b: %d\n", legal_list_size_b);
-    //printf("\nblack_finish");
-    //
-    //printf("\ndef_cx");
-    //
-    int w_cx = 0,b_cx = 0,index=0;
-    uint64_t w_legal=0,b_legal=0,legal_bit;
-    //printf("\ndef_cx2");
-    //
-    
-    for(int idx=0;idx<legal_list_size_w;idx++){
-        RowCol legal = legal_list_w[idx];
-        int row=legal.row,col=legal.col; 
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        w_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                w_cx++;
-            }
-        }
-    }
-    //
-    for(int idx=0;idx<legal_list_size_b;idx++){
-        RowCol legal = legal_list_b[idx];
-        int row=legal.row,col=legal.col;
-        index = row*8 + col;
-        legal_bit = ((uint64_t)1)  << index;
-        b_legal |= legal_bit;
-        for(int cx_idx=0;cx_idx<12;cx_idx++){
-            RowCol cx = cx_zone[cx_idx];
-            int cx_row = cx.row,cx_col = cx.col;
-            if(cx_row == row && cx_col == col){
-                b_cx++;
-            }
-        }
-    }
-    //
-    float zennmetu_keikoku = 0;
-    if(bit_count(board_w) <= 2&&turn>=8){
-        zennmetu_keikoku = -6000;
-    }
-    //
-    float edge_point_w = 0;
-    float edge_point_b = 0;
-    float edge_point,dis_num=0;
-    uint64_t m_e_list[4] = {m1_e,m2_e,m3_e,m4_e};
-    uint64_t m_c_list[4] = {m1_c,m2_c,m3_c,m4_c};
-    uint64_t c_w=0,c_b=0;
-    if(turn>=40){
-        get_confirmed_stones(board_w,board_b,&c_w,&c_b);
-    }else{
-        get_confirmed_stones_lite(board_w,board_b,&c_w,&c_b);
-    }
-
-    int c_w_num=bit_count(c_w);
-    int c_b_num=bit_count(c_b);
-    float con_score = (c_w_num - c_b_num);
-    //
-    for(int i=0;i<4;i++){
-        int dec_point=0,add_point=0;
-
-        int w_num=0,b_num=0;
-
-        w_num = bit_count(board_w&m_e_list[i]);
-        b_num = bit_count(board_b&m_e_list[i]);
-        uint64_t w_corner = board_w&m_c_list[i];
-        uint64_t b_corner = board_b&m_c_list[i];
-        uint64_t w_corner_legal = w_legal&m_c_list[i];
-        uint64_t b_corner_legal = b_legal&m_c_list[i];
-        int b_c_num = bit_count(b_corner);
-        int w_c_num = bit_count(w_corner);
-        int w_c_legal_num = bit_count(w_corner_legal);
-        int b_c_legal_num = bit_count(b_corner_legal);
-        int edge_con_num_w = bit_count(m_e_list[i]&c_w);
-        int edge_con_num_b = bit_count(m_e_list[i]&c_b);
-        //printf("\nw:%d\nb:%d",w_num,b_num);
-        if(w_num==6){
-            int dec = 0;
-            if(b_c_num==1&&w_c_num==0){
-                dec_point += 6*stable_point*0.9;
-                dec = 1;
-            }
-            if(b_c_legal_num>0){
-                dec_point += 6*stable_point* 0.8;
-                dec = 1;
-            }
-            if(b_c_num==0){
-                add_point += 6*stable_point* 0.3;
-            }
-        }
-        
-        /* if((w_num+b_num)==6&&w_c_num<=1&&b_num!=0){
-            dec_point += (6-edge_con_num_w)*stable_point*0.9;
-        } */
-        if((w_num+b_num)==6&&b_num!=0){
-            if(w_c_num<=1){
-                dec_point += (6-edge_con_num_w)*stable_point*0.9;
-            }
-            if((edge_con_num_w+edge_con_num_b)<=5&&w_c_num==1&&w_c_legal_num==1){
-                dec_point += (b_num-edge_con_num_b)*stable_point*0.9;
-            }
-        }
-        //printf("\nadd:%d\ndec:%d",add_point,dec_point);
-        edge_point_w += add_point;// + w_c_legal_num*6*0.4;
-        edge_point_w -= dec_point;
-        dec_point = 0;
-        add_point = 0;
-        /* if(b_num<=3){
-            if(b_c_legal_num>=1&&(b_num+w_num)>=5){
-                edge_point_w -= w_num*stable_point/10;
-            }else{
-                if(b_num<=0){
-                    edge_point_w += w_num*stable_point/20;
-                }
-            }
-        } */
-        /* if(b_num<=0){
-            edge_point_w += w_num*stable_point/10;
-        }else{
-            edge_point_w -= w_num*stable_point/10;
-        } */
-        if(b_num==6){
-            int dec = 0;
-            if(w_c_num==1&&b_c_num==0){
-                dec_point += 6*stable_point*0.9;
-                dec = 1;
-                //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
-            }
-            if(w_c_legal_num>0){
-                dec_point += 6*stable_point* 0.8;
-                dec = 1;
-                //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
-            }
-            if(dec==0){
-                add_point += 6*stable_point* 0.3;
-                //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
-            }
-        }
-        /* if((w_num+b_num)==6&&b_c_num<=1&&w_num!=0){
-            dec_point += (6-edge_con_num_b)*stable_point*0.9;
-        } */
-        if((w_num+b_num)==6&&w_num!=0){
-            if(b_c_num<=1){
-                dec_point += (6-edge_con_num_b)*stable_point*0.9;
-            }
-            if((edge_con_num_b+edge_con_num_w)<=5&&b_c_num==1&&b_c_legal_num==1){
-                dec_point += (w_num-edge_con_num_w)*stable_point*0.9;
-            }
-        }
-        edge_point_b += add_point;// + b_c_legal_num*6*0.4;
-        edge_point_b -= dec_point;
-        /* if(w_num<=3){
-            if((w_c_legal_num>=1&&(b_num+w_num)>=5)){
-                edge_point_b -= b_num*stable_point/10;
-            }else{
-                if(w_num<=0){
-                    edge_point_b += b_num*stable_point/20;
-                }
-            }
-        } */
-        /* if(w_num<=0){
-            edge_point_b += b_num*stable_point/10;
-        }else{
-            edge_point_b -= b_num*stable_point/10;
-        } */
-        //printf("\nnum:%d",b_num*stable_point*1/20);
-        
-    }
-    //
-    edge_point = edge_point_w - edge_point_b;
-    //edge_point *= 0.3f;
-    float pattern_point = (position_point(board_w) - position_point(board_b))*stable_point*0.9f;
-    //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
-    
-    //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
-    int white_score=0,black_score=0;
-    eval_bitboard_score(board_w,board_b,&white_score,&black_score);
-    float board_score=0;
-    if(alpha!=1){
-        board_score = white_score - black_score*1.1;
-        dis_num = legal_list_size_w - legal_list_size_b -(w_cx-b_cx)*2;
-    }
-    
-    float lose_keikoku = 0;
-    //
-    if(legal_list_size_b==0&&legal_list_size_w==0&&b_snum >= w_snum){
-        lose_keikoku = -1000;
-    }
-    float pass_bonus = false_pass-true_pass;
-    int board_score,connect_pairs_point,spread_point;
-    board_score = 10;
-    connect_pairs_point = 10;
-    spread_point = 20;
-    
-    float score = (1-alpha) * (dis_num*2 +  board_score*board_score + (touch_other*10+connected_pairs_score*connect_pairs_point+open_stones_score*10 + spread_score*spread_point)*(1-beta)) + alpha * (dis_num*0+(w_snum-b_snum)*10+(legal_list_size_w-legal_list_size_b)*10+connected_pairs_score*10);
-
-    //
-
-
-    //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
-    //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
-    //free(legal_list_w);
-    //free(legal_list_b);
-    //printf("\ndef_cx3");
-    /* if(turn>40){
-        con_score *=3;
-    } */
-    if (turn >= 20) {
-        score += (pass_bonus) * 500.0f;
-    }
-    return ((float)(score + con_score*stable_point + edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + pattern_point;
-    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
-}
-
 
 float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float false_pass,
-    float stable_point,
-    float edge_point,
-    float num_legal,
-    float board_score,
-    float sum_point,
-    float num_legal2,
-    float connect_pairs_point,
-    float spread_point,
-    float open_stones_point,
+    float w_stable_point,
+    float w_edge_point,
+    float w_num_legal,
+    float w_board_score,
+    float w_sum_point,
+    float w_num_legal2,
+    float w_connect_pairs_point,
+    float w_spread_point,
+    float w_open_stones_point,
     float alpha_start,
     float alpha_speed,
     float beta_start,
     float beta_speed,
-    float num_pass,
-    float touch_other_point,
-    float pattern_point,
-    float connect_pairs_point2,
-    float cx_legal_point,
-    float corner_legal_point
+    float w_num_pass,
+    float w_touch_other_point,
+    float w_pattern_point,
+    float w_connect_pairs_point2,
+    float w_cx_legal_point,
+    float w_corner_legal_point
     ){
     //stable_point = 100;
     uint64_t empty =  ~(board_w | board_b)& 0xFFFFFFFFFFFFFFFF;
@@ -1409,7 +1140,7 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
     
     int c_w_num=bit_count(c_w);
     int c_b_num=bit_count(c_b);
-    float con_score = (c_w_num - c_b_num);
+    float stable_score = (c_w_num - c_b_num);
     //fflush(stdout);
     int w_corner_num=0,b_corner_num=0;
     for(int i=0;i<4;i++){
@@ -1432,20 +1163,20 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
         if(w_num==6){
             int dec = 0;
             if(b_c_num==1&&w_c_num==0){
-                dec_point += 10*6*stable_point* 4/5/10;
+                dec_point += 10*6*w_stable_point* 4/5/10;
                 dec = 1;
             }
             if(bit_count(b_corner_legal)>0){
-                dec_point += 10*6*stable_point* 3/5/10;
+                dec_point += 10*6*w_stable_point* 3/5/10;
                 dec = 1;
             }
             if(dec==0){
-                add_point += 10*6*stable_point* 4/5/10;
+                add_point += 10*6*w_stable_point* 4/5/10;
             }
         }
         for(int k=0;k<8;k++){
             if((((m_e_list[i]|m_c_list[i])&board_w)&edge_pattern[k])==edge_pattern[k]&&w_num==5&&w_c_num==1&&b_c_num==0){
-                dec_point +=8*stable_point*0.9f;
+                dec_point +=8*w_stable_point*0.9f;
             }
         }
         //printf("\nadd:%d\ndec:%d",add_point,dec_point);
@@ -1454,52 +1185,52 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
         dec_point = 0;
         add_point = 0;
         if(b_num == 0&&w_c_num==0&&b_c_num==0){
-            edge_point_w += w_num*stable_point*0.2f;
+            edge_point_w += w_num*w_stable_point*0.2f;
         }else if(w_num<=6&&b_c_num==1&&w_c_num==0){
-            edge_point_w -= w_num*stable_point*0.9f;
+            edge_point_w -= w_num*w_stable_point*0.9f;
         }
         if(b_num==6){
             int dec = 0;
             if(w_c_num==1&&b_c_num==0){
-                dec_point += 10*6*stable_point* 4/5/10;
+                dec_point += 10*6*w_stable_point* 4/5/10;
                 dec = 1;
                 //printf("\n1:%f",10*6*stable_point* (4.0/5)/10);
             }
             if(bit_count(w_corner_legal)>0){
-                dec_point += 10*6*stable_point* 3/5/10;
+                dec_point += 10*6*w_stable_point* 3/5/10;
                 dec = 1;
                 //printf("\n2:%f",10*6*stable_point* (3.0/5)/10);
             }
             if(dec==0){
-                add_point += 10*6*stable_point* 4/5/10;
+                add_point += 10*6*w_stable_point* 4/5/10;
                 //printf("\n3:%f",10*6*stable_point* (4.0/5)/10);
             }
         }
         for(int k=0;k<8;k++){
             if((((m_e_list[i]|m_c_list[i])&board_b)&edge_pattern[k])==edge_pattern[k]&&b_num==5&&b_c_num==1&&w_c_num==0){
-                dec_point += 8*stable_point*0.9f;
+                dec_point += 8*w_stable_point*0.9f;
             }
         }
         edge_point_b += add_point;
         edge_point_b -= dec_point;
         if (w_num==0&&w_c_num==0&&b_c_num==0){
-            edge_point_b += b_num*stable_point*0.2f;
+            edge_point_b += b_num*w_stable_point*0.2f;
             //printf("\nnum:%d",b_num*stable_point*1/20);
         }else if(b_num<=6&&w_c_num==1&&b_c_num==0){
-            edge_point_b -= b_num*stable_point*0.9f;
+            edge_point_b -= b_num*w_stable_point*0.9f;
         }
     }
     //fflush(stdout);
     edge_point = edge_point_w - edge_point_b;
     //printf("\nw:%f\nb:%f",edge_point_w,edge_point_b);
-    dis_num = legal_list_size_w - legal_list_size_b -(w_cx-b_cx)*cx_legal_point+(w_corner_num-b_corner_num)*corner_legal_point;
+    dis_num = legal_list_size_w - legal_list_size_b -(w_cx-b_cx)*w_cx_legal_point+(w_corner_num-b_corner_num)*w_corner_legal_point;
     //printf("\n%d,%d,%d,%d",legal_list_size_w , legal_list_size_b ,w_cx,b_cx);
     int white_score=0,black_score=0;
     eval_bitboard_score(board_w,board_b,&white_score,&black_score);
 
     float board_score = white_score - black_score*1.5f;
     float pattern_point = 0;
-    pattern_point = (position_point(board_w) - position_point(board_b))*stable_point*pattern_point;
+    pattern_point = (position_point(board_w) - position_point(board_b))*w_stable_point*w_pattern_point;
     /* int b_snum = bit_count(board_b);
     int w_snum = bit_count(board_w); */
     float lose_keikoku = 0;
@@ -1508,20 +1239,20 @@ float evaluate_board(uint64_t board_w,uint64_t board_b,float true_pass,float fal
         lose_keikoku = -1000;
     }
     float pass_bonus = false_pass-true_pass;
-    float score = (1-alpha) * (dis_num*num_legal + board_score*board_score + (touch_other*touch_other_point+connected_pairs_score*connect_pairs_point+open_stones_score*open_stones_point + spread_score*spread_point)*(1-beta)) + alpha * ((w_snum-b_snum)*stable_point*sum_point+(legal_list_size_w-legal_list_size_b)*num_legal2+connected_pairs_score*connect_pairs_point2);
+    float score = (1-alpha) * (dis_num*w_num_legal + w_board_score*board_score + (touch_other*w_touch_other_point+connected_pairs_score*w_connect_pairs_point+open_stones_score*w_open_stones_point + spread_score*w_spread_point)*(1-beta)) + alpha * ((w_snum-b_snum)*w_stable_point*w_sum_point+(legal_list_size_w-legal_list_size_b)*w_num_legal2+connected_pairs_score*w_connect_pairs_point2);
     //float score = (1-alpha) * (dis_num*300/100 +  board_score*200/100) + alpha * ((w_snum-b_snum)*5000/100+(legal_list_size_w-legal_list_size_b)*400/100);
 
     //fflush(stdout);
 
 
-    //printf("\nscore:%f\ncon_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,con_score,edge_point,dis_num,alpha,w_snum-b_snum);
-    //printf("\naa:%f",(score*10 + con_score*stable_point*10 + edge_point*10)/10);
+    //printf("\nscore:%f\nstable_score:%d\nedge_point:%f\ndis_num:%f\nalpha:%f\ndis:%d",board_score,stable_score,edge_point,dis_num,alpha,w_snum-b_snum);
+    //printf("\naa:%f",(score*10 + stable_score*stable_point*10 + edge_point*10)/10);
     //printf("\naa:%d",zennmetu_keikoku + lose_keikoku + pass_bonus*90*alpha);
     //free(legal_list_w);
     //free(legal_list_b);
     //printf("\ndef_cx3");
-    return ((float)(score + con_score*stable_point + edge_point*edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*num_pass) + pattern_point;
-    //return (float)((score*10 + con_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
+    return ((float)(score + stable_score*w_stable_point + w_edge_point*edge_point)) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*w_num_pass) + pattern_point;
+    //return (float)((score*10 + stable_score*stable_point*10 + edge_point*10)/10) + (float)zennmetu_keikoku + (float)lose_keikoku + (float)(pass_bonus*90*alpha);
 }
 
 int is_terminal(uint64_t board_w,uint64_t board_b){
