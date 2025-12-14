@@ -23,5 +23,5 @@ for i in range(7,25):
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
     plt.legend()
-    plt.savefig(f"fig_{fitness_col}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"figs/fig_{fitness_col}.png", dpi=300, bbox_inches="tight")
     #plt.show()
